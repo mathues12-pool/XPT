@@ -1720,16 +1720,10 @@ function buildCity(){
   const BW=[0xe5e7eb,0xf1f5f9,0xd6d3d1,0xe7e5e4,0xdbeafe,0xfef3c7,0xe9d8c4],BG=[0x6a8db3,0x7da2c7,0x5b7a99,0x88adc9];
   for(let xx=-36;xx<=96;){const w=rnd(9,15);building(xx+w/2,-44,w,rnd(9,12),rnd(6,18),pick(BW),pick(BG),1);xx+=w+rnd(1.5,4);}
   for(let xx=-36;xx<=96;){const w=rnd(8,13);if(Math.random()<0.4)house(xx+w/2,43,w,8,rnd(3,3.6),PI,1);else building(xx+w/2,44,w,rnd(9,12),rnd(5,13),pick(BW),pick(BG),-1);xx+=w+rnd(1.5,4);}
-  // galpão vizinho (leste) com docas e caminhões
+  // quadra a leste do galpão: prédios comerciais (mesmo estilo da lateral)
   const nw=surf(TX.corrug,{color:0xd3dae3,rx:14,ry:1,rough:0.55,metal:0.25,bump:0.4});
-  box(32,9,40,nw,76,4.5,0);
   const rt=surf(TX.corrug,{color:0xaab2bd,rx:14,ry:10,rough:0.5,metal:0.35,bump:0.6});
-  box(33,0.4,41,rt,76,9.2,0);
-  for(let zz=-15;zz<=15;zz+=6){box(0.2,3.6,4,0x8d96a3,59.9,1.8,zz);box(0.3,0.25,4.4,0x59616d,59.85,3.75,zz);}
-  [-12,0,12].forEach(zz=>{const g=new T.Group();g.position.set(53.5,0,zz);city.add(g);
-    box(12,3.2,2.5,surf(TX.corrug,{color:pick([0xf8fafc,0xe5e7eb,0x93c5fd]),rx:8,ry:1,rough:0.5,metal:0.3}),0,2.1,0,g);
-    box(3,2.8,2.4,pick([0x1f2937,0x7c2d12,0x334155]),-7.6,1.8,0,g);box(2.3,0.9,0.05,GLASS,-7.6,2.5,1.22,g);
-    [-5,3,5].forEach(wx=>[-1,1].forEach(s=>{const w2=makeWheel(0.5,0.35);w2.position.set(wx,0.5,s*1.05);g.add(w2);}));[-7.6].forEach(wx=>[-1,1].forEach(s=>{const w2=makeWheel(0.5,0.35);w2.position.set(wx,0.5,s*1.05);g.add(w2);}));});
+  [[-14,-1],[0,1],[14,1]].forEach(([zz,dir])=>{for(let xx=50;xx<=92;){const w=rnd(9,14);if(xx+w>95)break;building(xx+w/2,zz,w,rnd(9,11),rnd(6,18),pick(BW),pick(BG),dir);xx+=w+rnd(1.5,3.5);}});
   // mais galpões e prédios (leste, norte e sul)
   function warehouse(cx,cz,w,d){
     const g=new T.Group();g.position.set(cx,0,cz);city.add(g);
