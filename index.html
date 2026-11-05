@@ -196,7 +196,25 @@ const GLB={ok:false,workers:[],TARGET:2.45,
       }
       clips[nm]=new T.AnimationClip(nm,dur,tracks);
     }
-    return {scene,gender,height,floorY,eyeUp:(top-hd.y)*0.3,clips,file,vest:new RegExp(vest||'^$','i')};
+    // posição de repouso (T-pose) dos vértices: serve para pintar colete/faixas e medir a cabeça para o capacete
+    const vestRe=new RegExp(vest||'^$','i'),rest={},v3=new T.Vector3(),hb=new T.Box3();let hairAvg=null;
+    scene.traverse(o=>{
+      if(!o.isSkinnedMesh)return;
+      const isHair=/hair/i.test(o.name)&&!/lash/i.test(o.name),isVest=vestRe.test(o.name);
+      if(!isHair&&!isVest)return;
+      o.skeleton.update();const n=o.geometry.attributes.position.count,arr=new Float32Array(n*3);
+      for(let i=0;i<n;i++){o.boneTransform(i,v3);v3.applyMatrix4(o.matrixWorld);arr[i*3]=v3.x;arr[i*3+1]=v3.y;arr[i*3+2]=v3.z;if(isHair&&v3.y>hd.y)hb.expandByPoint(v3);}
+      if(isVest)rest[o.name]=arr;
+      if(isHair&&o.material.map&&o.material.map.image){
+        try{const c=document.createElement('canvas');c.width=c.height=16;const x=c.getContext('2d');x.drawImage(o.material.map.image,0,0,16,16);
+          const d=x.getImageData(0,0,16,16).data;let r=0,g=0,b=0,w=0;for(let i=0;i<d.length;i+=4){const a=d[i+3]/255;r+=d[i]*a;g+=d[i+1]*a;b+=d[i+2]*a;w+=a;}
+          if(w>0)hairAvg=new T.Color(r/w/255,g/w/255,b/w/255).convertSRGBToLinear();}catch(e){}
+      }
+    });
+    const hr=isFinite(hb.min.x)?Math.max((hb.max.x-hb.min.x)/2,height*0.055):height*0.065;
+    const geo={cx:hip.x,xS:B.LeftArm?Math.abs(wp(B.LeftArm).x-hip.x):height*0.115,yh:hip.y,yn:wp(B.Neck||B.Head).y,H:height,
+      head:{x:isFinite(hb.min.x)?(hb.min.x+hb.max.x)/2:hd.x,z:isFinite(hb.min.z)?Math.min(hd.z+height*0.03,Math.max(hd.z-height*0.01,(hb.min.z+hb.max.z)/2)):hd.z,r:hr,top:isFinite(hb.max.y)?hb.max.y:top,base:hd.y}};
+    return {scene,gender,height,floorY,eyeUp:(top-hd.y)*0.3,clips,file,vest:vestRe,rest,geo,hairAvg,vc:{}};
   }
 };
 await GLB.load();
@@ -510,7 +528,7 @@ function regActor(a,tagText,md,tagBg){
   if(tagText){a.tag=makeTag(tagText,tagBg);a.tag.position.set(0,a.tagY||3.4,0);a.g.add(a.tag);}
   return a;
 }
-function unregActor(a){const i=actors.indexOf(a);if(i>=0)actors.splice(i,1);if(a.g.parent)a.g.parent.remove(a.g);const t=tags.indexOf(a.tag);if(t>=0)tags.splice(t,1);if(follow===a)unfollow();}
+function unregActor(a){a.gone=true;const i=actors.indexOf(a);if(i>=0)actors.splice(i,1);if(a.g.parent)a.g.parent.remove(a.g);const t=tags.indexOf(a.tag);if(t>=0)tags.splice(t,1);if(follow===a)unfollow();}
 const _cg={},_sg={},_hg={},_lg={};
 const HGm=(r,tl)=>{const k=r+"_"+tl;return _hg[k]||(_hg[k]=new T.SphereGeometry(r,24,16,0,PI*2,0,tl));};
 const CGm=(rt,rb,hh,s)=>{const k=[rt,rb,hh,s].join('_');return _cg[k]||(_cg[k]=new T.CylinderGeometry(rt,rb,hh,s||12));};
@@ -627,8 +645,91 @@ function makeWorkerProcedural(name,role,o){
   const carry=new T.Mesh(G(0.5,0.4,0.48),PKGMATS[0]);carry.position.set(0,1.05,0.52);carry.castShadow=true;carry.visible=false;body.add(carry);
   return {g,body,legs,arms,carry,head,type:'worker',name,role,phase:Math.random()*6,pose:'idle',turn:10,tagY:3.5,status:'Disponível'};
 }
-const BAND_GEO=new T.CylinderGeometry(1,1,0.075,20,1,true),BAND_MAT=new T.MeshStandardMaterial({color:0xe6e9ee,metalness:0.3,roughness:0.35,emissive:0x2a2c30,side:T.DoubleSide});
-const HELM_GEO=new T.SphereGeometry(1,20,12,0,Math.PI*2,0,Math.PI*0.5),HELM_MAT=new T.MeshStandardMaterial({color:0xf4f4ee,roughness:0.45,metalness:0.05});
+const HELM_DOME=new T.SphereGeometry(1,24,14,0,Math.PI*2,0,Math.PI/2),HELM_BRIM=new T.CylinderGeometry(1,1,1,24,1,false),HELM_VISOR=new T.CylinderGeometry(1,1,1,16,1,false,-Math.PI/2,Math.PI);
+const PANTS_C=[0x2b4a73,0x22262e,0x3b3f46,0x7a6a4a,0x33422f,0x565b66,0x1f3350],SHIRT_C=[0xf2f2ee,0x151515,0x3a4150,0x8a9099,0x1e2f6b,0x2856c8,0x5fb4e6,0x138a8a,0x1f6b3a,0x6b7a2a,0x8cc63f,0xe0b020,0x6b4226,0xcbb38a,0x7a1f2e,0xc62828,0xe36aa0,0xf19a8a,0x6d3fb5,0xb7a6e8,0x7fd6b0],
+  SHOE_C=[0x15171c,0x2a2a2a,0xe8e8e8,0x4a3426,0x1d3557,0x6b6f76],HAIR_C=[0x0d0b0a,0x1c130d,0x2f1d12,0x4a2f1c,0x6b4423,0x8f6b3a,0x7a3418],
+  SKIN_TINT=[[1.06,1,0.98],[0.94,0.8,0.68],[0.78,0.58,0.45],[0.58,0.4,0.31]];
+const SHIRTS=[];       // camisas em uso: {key,F,c,w}; quem saiu de cena (motoristas) libera a cor
+function shirtFor(key,F,hs,fixed){
+  for(let i=SHIRTS.length-1;i>=0;i--){const s=SHIRTS[i];if(s.w&&s.w.gone)SHIRTS.splice(i,1);}
+  const same=SHIRTS.find(s=>s.key===key&&s.F===F);if(same)return {c:same.c,e:null};
+  let c=fixed;
+  if(c==null){const used=new Set(SHIRTS.filter(s=>s.F===F).map(s=>s.c));
+    for(let i=0;i<SHIRT_C.length;i++){const k=SHIRT_C[(hs+i*5)%SHIRT_C.length];if(!used.has(k)){c=k;break;}}
+    if(c==null)c=SHIRT_C[hs%SHIRT_C.length];}
+  const e={key,F,c,w:null};SHIRTS.push(e);return {c,e};
+}
+// colete/mangas/faixas desenhados por pixel (a partir da posição de repouso do vértice): bordas nítidas mesmo com malha leve
+function vestGeo(tpl,m){
+  const k='g|'+m.name;if(tpl.vc[k])return tpl.vc[k];
+  const geo=m.geometry.clone();geo.setAttribute('rpos',new T.BufferAttribute(tpl.rest[m.name],3));return tpl.vc[k]=geo;
+}
+function vestMat(tpl,mt,vest,sleeve,bands){
+  const g=tpl.geo,u={uCx:{value:g.cx},uXs:{value:g.xS*0.78},uY1:{value:g.yh+(g.yn-g.yh)*0.3},uY2:{value:g.yh+(g.yn-g.yh)*0.64},uBw:{value:g.H*0.02},uH:{value:g.H},
+    uVest:{value:lin(vest)},uSleeve:{value:lin(sleeve)},uSilver:{value:lin(0xeef1f6)},uBands:{value:bands?1:0}};
+  mt.map=null;mt.metalnessMap=mt.roughnessMap=null;mt.metalness=0;mt.roughness=0.72;mt.color.setRGB(1,1,1);
+  mt.customProgramCacheKey=()=>'vestpaint';
+  mt.onBeforeCompile=sh=>{
+    Object.assign(sh.uniforms,u);
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 rpos;varying vec3 vRest;').replace('#include <begin_vertex>','#include <begin_vertex>\nvRest=rpos;');
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vRest;uniform float uCx,uXs,uY1,uY2,uBw,uH,uBands;uniform vec3 uVest,uSleeve,uSilver;float bandF=0.;')
+      .replace('#include <map_fragment>',`#include <map_fragment>
+      {float ax=abs(vRest.x-uCx);vec3 base=mix(uVest,uSleeve,smoothstep(uXs-0.006,uXs+0.006,ax));
+       if(uBands>0.5){float e=uBw*0.28;float f=(1.-smoothstep(uBw-e,uBw,abs(vRest.y-uY1)))+(1.-smoothstep(uBw-e,uBw,abs(vRest.y-uY2)));
+         f+=smoothstep(uY1-e,uY1,vRest.y)*smoothstep(uH*0.04-0.004,uH*0.04,ax)*(1.-smoothstep(uH*0.068-0.004,uH*0.068,ax));
+         f*=1.-smoothstep(uXs-0.006,uXs+0.006,ax);bandF=clamp(f,0.,1.);base=mix(base,uSilver,bandF);}
+       diffuseColor.rgb*=base;}`).replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=uSilver*0.2*bandF;');
+  };
+  mt.needsUpdate=true;
+}
+function makeWorkerGLB(name,role,o){
+  const hs=hashStr(String(o.seed!=null?o.seed:name)),rng=seeded(hs),F=!!(o.female||o.longHair);
+  const pool=GLB.workers.filter(t=>(t.gender==='f')===F),list=pool.length?pool:GLB.workers,tpl=list[hs%list.length];
+  const pick=a=>a[Math.floor(rng()*a.length)];
+  const root=T.SkeletonUtils.clone(tpl.scene),g=new T.Group(),body=new T.Group();
+  const sc=GLB.TARGET*((F?0.93:0.98)+rng()*0.1)/tpl.height,wx=0.95+rng()*0.12;      // altura pela medida do esqueleto (pés → cabeça) + porte
+  body.scale.set(sc*wx,sc,sc*wx);root.position.y=-tpl.floorY;body.add(root);g.add(body);
+  const rv=roleVest(role||'',o),vestC=o.vest!=null?o.vest:rv.c,shirt=shirtFor(o.seed!=null?name+'#'+o.seed:name,F,hs,o.sleeve!=null&&o.seed==null?o.sleeve:null),sleeveC=shirt.c,pantsC=o.pants!=null?o.pants:pick(PANTS_C),shoeC=pick(SHOE_C);
+  const hairC=lin(o.hair!=null?o.hair:pick(HAIR_C)),sk=SKIN_TINT[Math.max(0,SKIN.indexOf(o.skin))%SKIN_TINT.length]||SKIN_TINT[1];
+  const clone=(m)=>{m.material=m.material.clone();return m.material;};
+  root.traverse(m=>{
+    if(!m.isMesh)return;
+    m.castShadow=m.receiveShadow=true;m.frustumCulled=false;
+    const nm=m.name;
+    if(tpl.vest.test(nm)&&tpl.rest[nm]){                                   // colete + mangas: cores pintadas na malha (cópia do material, nunca o compartilhado)
+      const mt=clone(m);m.geometry=vestGeo(tpl,m);vestMat(tpl,mt,vestC,sleeveC,!o.noStripe&&!o.keepVest);
+    }else if(/pants|calca/i.test(nm)){const mt=clone(m);mt.map=null;mt.color.copy(lin(pantsC));mt.metalnessMap=mt.roughnessMap=null;mt.metalness=0;mt.roughness=0.85;}
+    else if(/shoe|sneaker/i.test(nm)){const mt=clone(m);mt.map=null;mt.color.copy(lin(shoeC));mt.metalnessMap=mt.roughnessMap=null;mt.metalness=0;mt.roughness=0.6;}
+    else if(/body/i.test(nm)){const mt=clone(m);mt.color.setRGB(sk[0],sk[1],sk[2]);}                 // tom de pele
+    else if(/hair/i.test(nm)&&!/lash|leash/i.test(nm)){                                              // cor do cabelo relativa à textura original
+      const mt=clone(m),av=tpl.hairAvg||new T.Color(0.05,0.035,0.025);
+      mt.color.setRGB(Math.min(2.6,hairC.r/Math.max(av.r,0.01)),Math.min(2.6,hairC.g/Math.max(av.g,0.01)),Math.min(2.6,hairC.b/Math.max(av.b,0.01)));
+    }
+  });
+  const bones={};root.traverse(b=>{if(b.isBone)bones[b.name.replace(/^mixamorig\d*:?/,'')]=b;});
+  const mixer=new T.AnimationMixer(root),actions={};
+  for(const nm in tpl.clips)actions[nm]=mixer.clipAction(tpl.clips[nm]);
+  g.updateMatrixWorld(true);
+  if(rv.helmet&&bones.Head){                                              // capacete de obra: calota + aba + viseira, preso ao osso da cabeça
+    const hd=tpl.geo.head,H=tpl.geo.H,brimY=hd.base+(hd.top-hd.base)*0.7,dh=hd.top-brimY+H*0.014,r=hd.r*1.12;
+    const col=/L[ií]der/i.test(role||'')?0xf4f4ee:/Despachante|Indu/i.test(role||'')?0x2f6fd1:0xffc81f,mat=new T.MeshStandardMaterial({color:col,roughness:0.4,metalness:0.05}),hg=new T.Group();
+    const dome=new T.Mesh(HELM_DOME,mat);dome.scale.set(r,dh,r*1.04);dome.position.y=brimY;
+    const brim=new T.Mesh(HELM_BRIM,mat);brim.scale.set(r*1.03,H*0.012,r*1.07);brim.position.y=brimY;
+    const vis=new T.Mesh(HELM_VISOR,mat);vis.scale.set(r*1.1,H*0.008,r*1.34);vis.position.set(0,brimY-H*0.002,r*0.04);
+    hg.add(dome,brim,vis);hg.position.set(hd.x,0,hd.z);hg.traverse(x=>{if(x.isMesh)x.castShadow=true;});
+    root.add(hg);bones.Head.attach(hg);
+  }
+  // "cabeça": esconde (osso Head com escala ~0) e devolve a posição dos olhos para a câmera em 1ª pessoa
+  const hb=bones.Head;let vis=true;const head=new T.Object3D();
+  Object.defineProperty(head,'visible',{get:()=>vis,set:v=>{vis=v;hb.scale.setScalar(v?1:0.001);}});
+  head.getWorldPosition=function(t){hb.getWorldPosition(t);t.y+=tpl.eyeUp*sc;return t;};
+  const hW=sc*tpl.height,carry=new T.Mesh(G(0.5,0.4,0.48),PKGMATS[0]);carry.position.set(0,0.55*hW,0.19*hW);carry.castShadow=true;carry.visible=false;g.add(carry);
+  const la=bones.LeftArm?g.worldToLocal(bones.LeftArm.getWorldPosition(new T.Vector3())).x:1;
+  const w={g,body,legs:[],arms:[],carry,head,type:'worker',name,role,phase:rng()*40,pose:'idle',turn:10,tagY:3.5,status:'Disponível',
+    glb:true,tplFile:tpl.file,shirtC:sleeveC,mixer,actions,bones,hW,lside:la>=0?1:-1,jit:0.9+rng()*0.2,t:0,cur:null,curA:null,walkT:0,lastSpd:0,skipAcc:0,flip:0};
+  if(shirt.e)shirt.e.w=w;
+  return w;
+}
 const GLB_SIT_DY=-0.2;      // ajuste da altura do quadril ao sentar na copa (modelos GLB)
 function makeWorker(name,role,o){
   if(GLB.ok){try{return makeWorkerGLB(name,role,o);}catch(e){console.warn('[GLB] falha ao montar "'+name+'": '+e.message+' — usando o boneco procedural');}}
@@ -636,77 +737,76 @@ function makeWorker(name,role,o){
 }
 // cor do colete por função: líder verde, gerente branco, despachante e indução azul, demais laranja
 function roleVest(role,o){
-  if(o.keepVest)return {c:o.vest,helmet:false};
+  if(o.keepVest)return {c:o.vest!=null?o.vest:0x334155,helmet:false};
   if(/Gerente/i.test(role))return {c:0xf4f6fb,helmet:false};
   if(/L[ií]der/i.test(role))return {c:0x22c55e,helmet:true};
   if(/Despachante/i.test(role))return {c:0x2563eb,helmet:true};
   if(/Indu[cç][aã]o/i.test(role))return {c:0x4e93e6,helmet:true};
   return {c:0xff8a3d,helmet:true,orange:true};
 }
-function makeWorkerGLB(name,role,o){
-  const hs=hashStr(String(o.seed!=null?o.seed:name)),rng=seeded(hs),F=!!(o.female||o.longHair);
-  const pool=GLB.workers.filter(t=>(t.gender==='f')===F),list=pool.length?pool:GLB.workers,tpl=list[hs%list.length];
-  const root=T.SkeletonUtils.clone(tpl.scene),g=new T.Group(),body=new T.Group();
-  const sc=GLB.TARGET*(0.94+rng()*0.12)/tpl.height;           // escala pela altura do esqueleto (pés → cabeça)
-  body.scale.setScalar(sc);root.position.y=-tpl.floorY;body.add(root);g.add(body);
-  const rv=roleVest(role||'',o),shirtC=o.sleeve!=null?o.sleeve:null,pantsC=o.pants!=null?o.pants:null;
-  root.traverse(m=>{
-    if(!m.isMesh)return;
-    m.castShadow=m.receiveShadow=true;m.frustumCulled=false;
-    const nm=(m.material&&m.material.name||m.name||'');
-    const tint=hex=>{m.material=m.material.clone();m.material.color.copy(lin(hex));};      // cópia: nunca altera o material compartilhado
-    if(/helmet|capacete/i.test(nm)||/helmet|capacete/i.test(m.name)){m.visible=rv.helmet;}
-    else if(/vest|colete/i.test(nm)){if(!rv.orange)tint(rv.c);}
-    else if(!o.keepVest&&tpl.vest.test(m.name)){tint(rv.c);m.material.map=null;m.material.metalnessMap=m.material.roughnessMap=null;m.material.metalness=0;m.material.roughness=0.75;}
-    else if(/shirt|camisa/i.test(nm)){if(shirtC!=null&&o.keepVest)tint(shirtC);}
-    else if(/pants|calca|calça/i.test(nm)){if(pantsC!=null&&o.keepVest)tint(pantsC);}
-  });
-  const bones={};root.traverse(b=>{if(b.isBone)bones[b.name.replace(/^mixamorig\d*:?/,'')]=b;});
-  const mixer=new T.AnimationMixer(root),actions={};
-  for(const nm in tpl.clips)actions[nm]=mixer.clipAction(tpl.clips[nm]);
-  // "cabeça": esconde (osso Head com escala ~0) e devolve a posição dos olhos para a câmera em 1ª pessoa
-  g.updateMatrixWorld(true);
-  const wpos=b=>b.getWorldPosition(new T.Vector3()),Hh=GLB.TARGET*sc*tpl.height/GLB.TARGET;
-  if(!o.keepVest&&bones.Spine1&&bones.Neck&&rv.c!==0xf4f6fb){
-    const a=wpos(bones.Hips),b=wpos(bones.Neck);
-    [0.32,0.62].forEach(f=>{const band=new T.Mesh(BAND_GEO,BAND_MAT);band.scale.set(0.098*Hh,1,0.066*Hh);band.position.copy(a).lerp(b,f);band.castShadow=true;g.add(band);bones.Spine1.attach(band);});
-  }
-  if(rv.helmet&&bones.Head){
-    const hp=wpos(bones.Head),tp=bones.HeadTop_End?wpos(bones.HeadTop_End):hp.clone().setY(hp.y+0.13*Hh),cap=new T.Mesh(HELM_GEO,HELM_MAT);
-    cap.scale.setScalar(0.056*Hh);cap.position.set(hp.x,hp.y+(tp.y-hp.y)*0.7,hp.z);cap.castShadow=true;g.add(cap);bones.Head.attach(cap);
-  }
-  const hb=bones.Head;let vis=true;const head=new T.Object3D();
-  Object.defineProperty(head,'visible',{get:()=>vis,set:v=>{vis=v;hb.scale.setScalar(v?1:0.001);}});
-  head.getWorldPosition=function(t){hb.getWorldPosition(t);t.y+=tpl.eyeUp*sc;return t;};
-  const carry=new T.Mesh(G(0.5,0.4,0.48),PKGMATS[0]);carry.position.set(0,1.32,0.62);carry.castShadow=true;carry.visible=false;g.add(carry);
-  return {g,body,legs:[],arms:[],carry,head,type:'worker',name,role,phase:Math.random()*6,pose:'idle',turn:10,tagY:3.5,status:'Disponível',
-    glb:true,mixer,actions,cur:null,curA:null,walkT:0,lastSpd:0,skipAcc:0,flip:0};
-}
 const POSE_CLIP={idle:'Idle',carry:'Carry',push:'PushCart',reach:'Reach',low:'Reach',work:'Work',scan:'ScanTablet',tablet:'ScanTablet',sit:'SitIdle',drive:'Drive'};
 let SIMDT=0;                    // passo de tempo da simulação deste quadro (respeita velocidade e pausa)
 function animGLB(w){
   const dt=SIMDT,mv=w.moved>1e-4;
-  if(mv){w.walkT=0.18;if(dt>0)w.lastSpd=w.moved/dt;}else if(dt>0)w.walkT=Math.max(0,w.walkT-dt);
-  const walking=w.walkT>0,spd=w.lastSpd,p=w.pose;
+  if(mv){w.walkT=0.2;if(dt>0)w.lastSpd=w.moved/dt;}else if(dt>0)w.walkT=Math.max(0,w.walkT-dt);
+  const walking=w.walkT>0&&w.pose!=='drive'&&w.pose!=='sit',spd=w.lastSpd,p=w.pose,hold=p==='carry'||p==='push'||p==='drive';
   let name,ts=1;
   if(p==='sit')name='SitIdle';
-  else if(p==='drive')name='Drive';
-  else if(p==='push'||p==='carry'){name=POSE_CLIP[p];ts=walking?clamp(spd/2.2,0.5,1.8):0;}
-  else if(walking){name=spd>5.2?'Run':'Walk';ts=name==='Run'?clamp(spd/6,0.8,1.6):clamp(spd/2.3,0.6,2.2);}
+  else if(walking){name=spd>5.2&&!hold?'Run':'Walk';ts=name==='Run'?clamp(spd/6,0.8,1.6):clamp(spd/2.3,0.6,2.2)*(hold?0.9:1);}
+  else if(hold)name='Idle';                                   // pernas paradas e naturais; os braços vão por IK
   else name=POSE_CLIP[p]||'Idle';
   if(!w.actions[name])name=w.actions.Idle?'Idle':Object.keys(w.actions)[0];
   const next=w.actions[name];if(!next)return;
   if(name!==w.cur){
-    next.reset().setEffectiveWeight(1).setEffectiveTimeScale(ts).play();
-    if(w.curA)w.curA.crossFadeTo(next,0.25,false);
+    next.reset();next.time=(w.phase*0.37)%next.getClip().duration;          // fase própria: ninguém se mexe em sincronia
+    next.setEffectiveWeight(1).setEffectiveTimeScale(ts*w.jit).play();
+    if(w.curA)w.curA.crossFadeTo(next,name==='Walk'||w.cur==='Walk'?0.22:0.35,false);
     w.cur=name;w.curA=next;
-  }else next.setEffectiveTimeScale(ts);
-  // desempenho: com a câmera longe, anima em metade dos quadros
-  if(!FP.on&&view.zoom<0.55){w.skipAcc+=dt;w.flip^=1;if(w.flip)return;const d2=w.skipAcc;w.skipAcc=0;w.mixer.update(d2);return;}
-  w.mixer.update(dt);
+  }else next.setEffectiveTimeScale(ts*w.jit);
+  let d=dt;
+  if(!FP.on&&view.zoom<0.55){w.skipAcc+=dt;w.flip^=1;if(w.flip)return;d=w.skipAcc;w.skipAcc=0;}   // longe: anima em metade dos quadros
+  w.mixer.update(d);w.t+=d;
+  glbPost(w,p,walking,hold);
+}
+// "vida" por cima do clipe: olhar em volta e balanço leve do tronco quando parado
+function glbPost(w,p,walking,hold){
+  const B=w.bones,t=w.t+w.phase;
+  if(!walking&&p!=='sit'){
+    const amp=p==='idle'||p==='tablet'?1:0.45;
+    if(B.Head){B.Head.rotateY((Math.sin(t*0.31)*0.2+Math.sin(t*0.87)*0.07)*amp);B.Head.rotateX(Math.sin(t*0.23)*0.05*amp);}
+    if(B.Spine1)B.Spine1.rotateY(Math.sin(t*0.19)*0.05*amp);
+  }
+  if(!hold)return;
+  // alvos das mãos
+  let L=null,R=null;const g=w.g;
+  g.updateWorldMatrix(true,true);
+  if(p==='carry'&&w.carry.visible){const c=w.carry.position;L=g.localToWorld(new T.Vector3(w.lside*0.29,c.y+0.02,c.z-0.04));R=g.localToWorld(new T.Vector3(-w.lside*0.29,c.y+0.02,c.z-0.04));}
+  else if((p==='push'||p==='drive')&&w.grips){const a=w.grips[0].getWorldPosition(new T.Vector3()),b=w.grips[1].getWorldPosition(new T.Vector3());
+    const ga=g.worldToLocal(a.clone()).x;if((ga>=0)===(w.lside>0)){L=a;R=b;}else{L=b;R=a;}}
+  else if(p==='push'){L=g.localToWorld(new T.Vector3(w.lside*0.25,0.55*w.hW,0.3*w.hW));R=g.localToWorld(new T.Vector3(-w.lside*0.25,0.55*w.hW,0.3*w.hW));}
+  if(!L)return;
+  ikArm(w,'Left',L,w.lside);ikArm(w,'Right',R,-w.lside);
+}
+const _ik={S:new T.Vector3(),E:new T.Vector3(),H:new T.Vector3(),d:new T.Vector3(),p:new T.Vector3(),q:new T.Quaternion(),wq:new T.Quaternion(),pq:new T.Quaternion()};
+function ikRot(bone,from,to){                     // gira o osso (em espaço do mundo) para que "from" aponte para "to"
+  const q=_ik.q.setFromUnitVectors(from.normalize(),to.normalize());
+  bone.getWorldQuaternion(_ik.wq);bone.parent.getWorldQuaternion(_ik.pq);
+  bone.quaternion.copy(_ik.pq.invert().multiply(q.multiply(_ik.wq)));bone.updateMatrixWorld(true);
+}
+// IK de dois ossos (braço + antebraço), cotovelo apontando para fora e para trás
+function ikArm(w,side,T0,sx){
+  const up=w.bones[side+'Arm'],lo=w.bones[side+'ForeArm'],hd=w.bones[side+'Hand'];if(!up||!lo||!hd)return;
+  const S=up.getWorldPosition(_ik.S).clone(),E=lo.getWorldPosition(_ik.E).clone(),Hh=hd.getWorldPosition(_ik.H).clone();
+  const a=S.distanceTo(E),b=E.distanceTo(Hh),dir=_ik.d.copy(T0).sub(S),dist=dir.length();if(dist<1e-4)return;dir.divideScalar(dist);
+  const dc=clamp(dist,Math.abs(a-b)+1e-3,(a+b)*0.999),A=Math.acos(clamp((a*a+dc*dc-b*b)/(2*a*dc),-1,1));
+  const pole=new T.Vector3(sx*0.9,-0.8,-0.5).transformDirection(w.g.matrixWorld),pv=pole.sub(dir.clone().multiplyScalar(pole.dot(dir))).normalize();
+  const Ed=S.clone().addScaledVector(dir,Math.cos(A)*a).addScaledVector(pv,Math.sin(A)*a);
+  ikRot(up,E.clone().sub(S),Ed.clone().sub(S));
+  const E2=lo.getWorldPosition(new T.Vector3()),H2=hd.getWorldPosition(new T.Vector3()),Td=S.clone().addScaledVector(dir,dc);
+  ikRot(lo,H2.sub(E2),Td.sub(E2));
 }
 function setCarry(w,mat){if(mat==null||mat===false){w.carry.visible=false;w.pose='idle';return;}w.carry.material=Array.isArray(mat)?mat:PKGMATS[0];w.carry.visible=true;w.pose='carry';}
-const handsWorld=w=>w.g.localToWorld(new T.Vector3(0,1.0*1.3,0.55*1.3));
+const handsWorld=w=>w.g.localToWorld(w.glb?w.carry.position.clone():new T.Vector3(0,1.0*1.3,0.55*1.3));
 function animWorker(w,time){
   if(w.glb)return animGLB(w);
   if(w.pose==='sit'){w.legs.forEach(l=>l.rotation.x=-1.45);w.arms[0].rotation.x=-0.85+Math.sin(time*2+w.phase)*0.15;w.arms[1].rotation.x=-0.5;w.body.position.y=0;return;}
@@ -862,6 +962,7 @@ function makeJack(name,color,op,reach){
   [[-0.35,-0.4],[0.35,-0.4]].forEach(([x,z])=>wheels.push(cyl(0.16,0.16,0.12,0x20252f,12,x,0.16,z,g,0,PI/2)));
   const beacon=new T.Mesh(new T.SphereGeometry(0.1,10,8),new T.MeshBasicMaterial({color:0xff9d1c}));beacon.position.set(0.38,1.15,-0.3);g.add(beacon);
   const w=makeWorker(op.name,'',op);w.g.position.set(0,0.18,-0.8);w.pose='drive';g.add(w.g);
+  w.grips=[1,-1].map(s=>{const o=new T.Object3D();o.position.set(s*0.18,1.46,-0.58);g.add(o);return o;});
   return {g,forks,wheels,beacon,driver:w,type:'jack',name:op.name,role:'Paleteira elétrica '+name,turn:2.4,load:null,lift:0,off:reach,tagY:3.6,status:'Aguardando',
     setLift(y){this.lift=y;forks.position.y=y;}};
 }
@@ -873,6 +974,7 @@ function makeHandJack(name,op){
   box(0.07,1.05,0.07,0x2c3340,0,0.52,0,hd);box(0.42,0.07,0.07,0x2c3340,0,1.05,0,hd);
   [-0.22,0.22].forEach(x=>wheels.push(cyl(0.13,0.13,0.1,0x20252f,12,x,0.13,0.04,g,0,PI/2)));
   const w=makeWorker(op.name,'',op);w.g.position.set(0,0,-0.85);w.pose='push';g.add(w.g);
+  w.grips=[1,-1].map(s=>{const o=new T.Object3D();o.position.set(s*0.16,1.05,0);hd.add(o);return o;});
   return {g,forks,wheels,beacon:null,driver:w,walker:true,type:'jack',name:op.name,role:'Paleteira manual '+name,turn:2.6,load:null,lift:0,off:1.15,tagY:3.4,status:'Aguardando',
     setLift(y){this.lift=y;forks.position.y=y;}};
 }
