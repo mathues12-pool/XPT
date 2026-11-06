@@ -2137,6 +2137,11 @@ function rjWall(x1,z1,x2,z2,h,c){h=h||WALLH;const cx=(x1+x2)/2,cz=(z1+z2)/2,w=Ma
 let rjBuilt=false;const RJW=[];
 function buildRJ(){
   if(rjBuilt)return;rjBuilt=true;
+  const _ra=regActor;let nF=0,nM=0;
+  regActor=(a,tag,md,bg)=>{const nm=/Motorista/.test(a.role||'')?'Motorista '+(++nM):'Funcionário '+(++nF);a.name=nm;return _ra(a,nm,md,bg);};
+  try{buildRJ0();}finally{regActor=_ra;}
+}
+function buildRJ0(){
   /* ---------- paredes externas: portão único do caminhão e porta de passagem no corredor ---------- */
   const GZ=[-9.4,-0.4],DZ=[3.45,4.55],SHZ=-0.8;      // SHZ: WC/escada mais ao norte → corredor mais largo até a sala
   rjWall(-WX,-WZ,WX,-WZ);rjWall(-WX,WZ,WX,WZ);rjWall(WX,-WZ,WX,WZ);
@@ -2212,7 +2217,7 @@ function buildRJ(){
   const UP=FLOOR+3.0,glass=M(0xcfe3f5,{transparent:true,opacity:0.22,roughness:0.05,metalness:0.2,depthWrite:false});
   const gl2=M(0xd6e8f8,{transparent:true,opacity:0.2,roughness:0.05,metalness:0.2,depthWrite:false});                            // 2º andar: inteiro, piso de vidro
   const UPG=new T.Group();UPG.visible=false;RJ.add(UPG);RJUP=UPG;
-  box(sl.w,0.06,sl.d,gl2,sl.cx,UP,sl.cz,UPG,{noCast:true});
+  box(sl.w,0.08,sl.d,M(0xc9ced6,{roughness:0.7}),sl.cx,UP,sl.cz,UPG);box(sl.w-0.3,0.01,sl.d-0.3,0xe3ddd2,sl.cx,UP+0.045,sl.cz,UPG,{noCast:true});   // piso do 2º andar
   [[sl.cx,sl.z1,sl.w,0.12],[sl.cx,sl.z2,sl.w,0.12],[sl.x1,sl.cz,0.12,sl.d],[sl.x2,sl.cz,0.12,sl.d]].forEach(([x,z,w,d])=>box(w,0.14,d,0x2c3340,x,UP,z,UPG));
   [[sl.x1+0.2,sl.z1+0.2],[sl.x2-0.2,sl.z1+0.2],[sl.x1+0.2,sl.z2-0.2],[sl.x2-0.2,sl.z2-0.2],[sl.cx,sl.z1+0.2],[sl.cx,sl.z2-0.2]].forEach(([x,z])=>box(0.18,UP-FLOOR,0.18,0x2c3340,x,FLOOR+(UP-FLOOR)/2,z,RJ));
   [[sl.cx,sl.z1,sl.w,0.06],[sl.x2,sl.cz,0.06,sl.d]].forEach(([x,z,w,d])=>{box(w,0.05,d,0x2c3340,x,UP+1.0,z,UPG);box(w,0.95,d,glass,x,UP+0.5,z,UPG,{noCast:true});});
@@ -2506,8 +2511,11 @@ function givePhone(w){                                         // celular com o 
   if(!(w.glb&&w.bones&&w.bones.RightHand))return;
   const ph=new T.Group();box(0.13,0.25,0.02,0x111318,0,0,0,ph);
   const s=new T.Mesh(new T.PlaneGeometry(0.115,0.225),new T.MeshBasicMaterial({color:0x8fd3ff,toneMapped:false}));s.position.z=0.012;ph.add(s);
-  const s2=s.clone();s2.position.z=-0.012;s2.rotation.y=PI;ph.add(s2);
-  inHand(w,ph,new T.Vector3(0,1,0));w.phone=ph;
+  const s2=s.clone();s2.material=s.material;s2.position.z=-0.012;s2.rotation.y=PI;ph.add(s2);
+  const beam=new T.Mesh(new T.ConeGeometry(0.12,0.42,4,1,true),new T.MeshBasicMaterial({color:0x22ff88,transparent:true,opacity:0.55,side:T.DoubleSide,depthWrite:false,toneMapped:false}));
+  beam.rotation.x=PI/2;beam.position.set(0,0.06,-0.23);beam.visible=false;ph.add(beam);
+  const led=new T.Mesh(new T.SphereGeometry(0.022,8,6),new T.MeshBasicMaterial({color:0x22ff88,toneMapped:false}));led.position.set(0,0.1,-0.016);led.visible=false;ph.add(led);
+  s.material=s.material.clone();inHand(w,ph,new T.Vector3(0,1,0));w.phone=ph;w.phoneFx={scr:s.material,beam,led};
 }
 function gaiSacks(pl){                                         // 4 sacas cheias dentro da gaiola
   [[-0.24,-0.22],[0.24,-0.22],[-0.24,0.2],[0.24,0.2]].forEach(([x,z])=>{if(pl.sacks.length>=4)return;const s=makeSack();s.scale.setScalar(0.44);s.position.set(x,0.2,z);s.rotation.y=rnd(0,PI*2);pl.g.add(s);pl.sacks.push(s);});}
@@ -2582,7 +2590,16 @@ async function rjTratLoop(w,h){
   while(true){w.pose='work';w.status='Tratando pacotes';await wait(rnd(4,8));
     w.pose='tablet';w.status='Consultando o sistema';await wait(rnd(2,4));w.pose='idle';await wait(rnd(1,2));await turnTo(w,h);}
 }
-async function phoneBip(w){const s=w.phone&&w.phone.children[1];if(!s){await wait(0.3);return;}s.material=s.material.clone();s.material.color.setHex(0x3dff8f);await wait(0.3);s.material.color.setHex(0x8fd3ff);}
+function leftPkg(w,on){                                         // pacote na mão esquerda (a direita segura o celular)
+  if(!(w.glb&&w.bones&&w.bones.LeftHand)){on?setCarry(w,PKGMATS[0]):setCarry(w,false);return;}
+  if(!w.lpkg){const p=makePkg(0),hb=w.bones.LeftHand,ch=hb.children.find(c=>c.isBone),v=ch?ch.position.clone():new T.Vector3(0,1,0),L=v.length();v.normalize();
+    hb.add(p);hb.updateWorldMatrix(true,false);const s=hb.getWorldScale(new T.Vector3()).x;p.scale.setScalar(0.75/s);p.position.copy(v).multiplyScalar(L*1.1);w.lpkg=p;}
+  if(on)w.lpkg.material=pick(PKGMATS);w.lpkg.visible=on;}
+async function phoneBip(w){const f=w.phoneFx;if(!f){await wait(0.3);return;}                 // escaneia: feixe verde e tela verde
+  const aim=()=>{if(!(w.lpkg&&w.lpkg.visible))return;const ph=w.phone;w.g.updateWorldMatrix(true,true);const t=ph.worldToLocal(w.lpkg.getWorldPosition(new T.Vector3())),L=Math.min(0.6,Math.max(0.1,t.length())),d=t.clone().normalize();   // feixe mira no pacote
+    f.beam.quaternion.setFromUnitVectors(new T.Vector3(0,-1,0),d);f.beam.position.copy(d).multiplyScalar(L/2);f.beam.scale.set(1,L/0.42,1);};
+  aim();run(()=>{aim();return !f.beam.visible;});
+  f.beam.visible=f.led.visible=true;f.scr.color.setHex(0x22ff88);await wait(0.55);f.beam.visible=false;await wait(0.25);f.led.visible=false;f.scr.color.setHex(0x8fd3ff);}
 const LEAVE=[0,0,0,7,7,13,13,13,20,26,26,31,37,37,42,48,48,53,58,58];     // saídas misturadas: grupos juntos e outros espaçados
 async function rjDriverLoop(w,i){
   const OUTZ=-1.2,pl=w.route,h=pl.h,side=new T.Vector3(Math.cos(h),0,-Math.sin(h)),hs=Math.atan2(side.x,side.z);
@@ -2594,9 +2611,9 @@ async function rjDriverLoop(w,i){
     while(t<T0){
       w.status='Pegando o pacote da rota';await turnTo(w,h);w.pose=pl.kind==='gl'?'reach':'low';await wait(0.5);
       if(!palletTake(pl))(async()=>{await wait(rnd(4,8));for(let q=rint(6,10);q>0;q--)palletAdd(pl);})();     // a separação repõe a rota
-      setCarry(w,PKGMATS[rint(0,5)]);
-      w.status='Bipando o pacote no celular';await wait(0.35);await phoneBip(w);
-      w.status='Colocando na saca';await turnTo(w,hs);w.pose='low';await wait(0.4);setCarry(w,false);
+      leftPkg(w,true);w.pose='tablet';
+      w.status='Escaneando o pacote no celular';await wait(0.6);await phoneBip(w);
+      w.status='Colocando na saca';await turnTo(w,hs);w.pose='low';await wait(0.4);leftPkg(w,false);
       k++;sack.scale.y=Math.min(0.62,0.25+k*0.05);w.pose='idle';await wait(0.2);t+=2.4;
     }
     if(w.talker){                                                     // alguns conversam com quem está na mesa de conferência
