@@ -991,7 +991,7 @@ const SCANNERS=[-3.0,2.3].map((x,i)=>{
   box(0.13,0.13,0.84,0x2c3340,0,2.3,-0.28,g);
   box(0.42,0.24,0.34,0x1f2735,0,2.1,0,g);box(0.3,0.04,0.2,0x3a4660,0,1.97,0,g);
   const led=new T.Mesh(new T.SphereGeometry(0.05,8,6),new T.MeshBasicMaterial({color:0x149e55}));led.position.set(0.16,2.2,0.18);g.add(led);
-  const mat=new T.MeshBasicMaterial({color:0x22ff88,transparent:true,opacity:0.16,side:T.DoubleSide,depthWrite:false});
+  const mat=new T.MeshBasicMaterial({color:0x22ff88,transparent:true,opacity:0,side:T.DoubleSide,depthWrite:false});
   const beam=new T.Mesh(new T.ConeGeometry(0.48,1.0,4,1,true),mat);beam.position.y=1.45;beam.rotation.y=PI/4;g.add(beam);
   return {x,mat,led,flash:0,key:'s'+i};
 });
@@ -1320,7 +1320,7 @@ function updateBelt(dt){
   SCANNERS.forEach(sc=>{
     beltItems.forEach(b=>{if(!b[sc.key]&&Math.abs(b.x-sc.x)<0.2){b[sc.key]=true;sc.flash=0.35;}});
     sc.flash=Math.max(0,sc.flash-dt);const on=sc.flash>0;
-    sc.mat.color.setHex(0x22ff88).convertSRGBToLinear();sc.mat.opacity=on?0.5:0.16;sc.led.material.color.setHex(on?0x22ff88:0x149e55).convertSRGBToLinear();
+    sc.mat.color.setHex(0x22ff88).convertSRGBToLinear();sc.mat.opacity=on?0.55:0;sc.led.material.color.setHex(on?0x22ff88:0x2b3a33).convertSRGBToLinear();   // feixe só aparece ao bipar
   });
   stripes.forEach(s=>{s.position.x+=BELT.speed*dt;if(s.position.x>BELT.x1)s.position.x-=BELT.x1-BELT.x0;});
 }
