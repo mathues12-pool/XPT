@@ -81,7 +81,7 @@ body:not(.ops) .opBtn svg{display:none}body:not(.ops) .opBtn{cursor:default;poin
 
 <div class="top glass">
   <div class="brand opWrap" id="opWrap"><img class="logo" id="logoImg" alt=""><button class="opBtn" id="opBtn" aria-haspopup="true" title="Trocar a operação"><span id="opName">XPT_RJ_Rio_Penha_02</span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
-    <div class="opMenu" id="opMenu" role="menu"><button data-href="XPT_SP_Jales.html"><span>XPT_SP_Jales</span><small>São Paulo</small></button><button data-href="XPT_RJ_Rio_Penha_02.html" class="cur"><span>XPT_RJ_Rio_Penha_02</span><small>Rio de Janeiro</small></button></div></div>
+    <div class="opMenu" id="opMenu" role="menu"><button data-href="XPT_SP_Jales.html"><span>XPT_SP_Jales</span><small>São Paulo</small></button><button data-href="XPT_RJ_Rio_Penha_02.html" class="cur"><span>XPT_RJ_Rio_Penha_02</span><small>Rio de Janeiro</small></button><button data-href="Construtor.html"><span>Construtor de operações</span><small>Criar do zero</small></button></div></div>
   <div class="center">
   <div class="modes" id="modes">
     <button data-m="proc" class="on"><svg class="i" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3.3 7.5L12 12.5l8.7-5M12 22V12.5"/></svg>Processamento</button>
@@ -332,7 +332,7 @@ function propBase(n,keep){                                      // clone com a o
   const b=new T.Box3().setFromObject(o),w=new T.Group();w.add(o);o.position.set(-(b.min.x+b.max.x)/2,-b.min.y,-(b.min.z+b.max.z)/2);return w;}
 function propPlace(n,x,y,z,ry,parent,sc){whenProp(n,()=>{const g=propBase(n);g.position.set(x,y,z);g.rotation.y=ry||0;if(sc)g.scale.setScalar(sc);(parent||scene).add(g);});}
 (async function loadProps(){
-  const names=['computer_scanner_barcode_a01','chair_office_amf_black_a01','fireProtection_extinguisher_portable_a01','sign_wetFloor_a01','warehouse_packingTable_heavyDuty_c02','warehouse_pallet_a01'].concat(window.__PROPX||[]);
+  const names=['computer_scanner_barcode_a01','chair_office_amf_black_a01','sign_wetFloor_a01','warehouse_packingTable_heavyDuty_c02','warehouse_pallet_a01'].concat(window.__PROPX||[]);
   const ld=new T.GLTFLoader();
   await Promise.all(names.map(n=>new Promise(res=>ld.load('models/props/'+n+'.glb',g=>{
     const dead=[];g.scene.traverse(c=>{if(c.name==='ReferencePrims')dead.push(c);if(c.isMesh){c.castShadow=c.receiveShadow=true;}});dead.forEach(c=>c.parent&&c.parent.remove(c));   // some nós de referência duplicam as malhas
@@ -1547,9 +1547,6 @@ async function carCycle(r,instant){
 }
 
 // equipe fixa da expedição
-/* segurança em Jales: extintores na parede com plaquinha */
-[[-18,-WZ+0.45,0,0,-0.25],[-2,-WZ+0.45,0,0,-0.25],[-12,WZ-0.45,PI,0,0.25],[4,WZ-0.45,PI,0,0.25]].forEach(([x,z,ry,dx,dz])=>{
-  return;propPlace('fireProtection_extinguisher_portable_a01',x,FLOOR,z,ry,scene,1.3);box(dx?0.03:0.42,0.42,dx?0.42:0.03,0xc62828,x+dx,FLOOR+1.7,z+dz,scene);});
 document.body.insertAdjacentHTML('beforeend','<div style="position:fixed;right:12px;bottom:58px;z-index:5;font:11px system-ui,sans-serif;color:#6b7a99;opacity:.8;pointer-events:none">Alguns objetos 3D: NVIDIA SimReady Assets (CC BY 4.0)</div>');
 function swapGun(gun,parts,led,beam){                                    // troca a pistola procedural pelo leitor de mão da NVIDIA
   whenProp('computer_scanner_barcode_a01',()=>{
@@ -2293,8 +2290,6 @@ function buildRJ0(){
   (function(){const a=new T.Vector3(esc.x1+0.2,FLOOR+1.0,sz-sw/2),b=new T.Vector3(esc.x2,LJ+1.0,sz-sw/2),m=new T.Mesh(new T.CylinderGeometry(0.03,0.03,a.distanceTo(b),8),M(0x2c3340));
     m.position.copy(a).lerp(b,0.5);m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),b.clone().sub(a).normalize());RJ.add(m);
     for(let i=0;i<=4;i++){const p=a.clone().lerp(b,i/4);box(0.04,1.0,0.04,0x2c3340,p.x,p.y-0.5,p.z,RJ);}})();
-  [[-WX+0.45,-WZ+0.7,PI/2,-0.28,0],[-29,-WZ+0.55,0,0,-0.38],[-15,-WZ+0.55,0,0,-0.38],[-31,4.54,PI,0,0.22]].forEach(([x,z,ry,dx,dz])=>{   // extintores com plaquinha vermelha na parede
-    propPlace('fireProtection_extinguisher_portable_a01',x,FLOOR,z,ry,RJ,1.3);box(dx?0.03:0.42,0.42,dx?0.42:0.03,0xc62828,x+dx,FLOOR+1.7,z+dz,RJ);});
   propPlace('sign_wetFloor_a01',wc1.cx+1.0,FLOOR,wc1.z2+1.0,0.5,RJ,1);
   // bebedouro encostado na parede do WC
   const bxx=wc2.x2+0.42,bz=wc2.cz;
