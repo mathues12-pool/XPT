@@ -12,6 +12,7 @@ header{position:fixed;inset:0 0 auto 0;height:56px;background:var(--pan);border-
 .brand b{display:block;font-size:14px;color:var(--ink);letter-spacing:-.01em}.brand small{color:var(--mut);font-size:11px}
 .opn{display:flex;flex-direction:column;gap:1px}.opn label{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em}.opn input{border:0;border-bottom:1.5px solid var(--line);background:transparent;font:600 14px Inter;color:var(--ink);padding:1px 0;width:260px;outline:none}.opn input:focus{border-color:var(--acc)}
 .sp{flex:1}.grp{display:flex;gap:2px;padding:3px;background:#f1f5f9;border-radius:9px}
+.row button{min-width:0;justify-content:center;white-space:normal;text-align:center;line-height:1.2}
 button{font:inherit;color:inherit;border:0;background:transparent;border-radius:7px;padding:6px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-weight:500;white-space:nowrap}
 button:hover{background:#e8edf4}button:disabled{opacity:.4;cursor:default}button.on{background:#fff;box-shadow:var(--sh);color:var(--ink)}
 button.pri{background:var(--acc);color:#fff;font-weight:600;padding:8px 14px}button.pri:hover{background:#d9431f}
@@ -74,7 +75,7 @@ kbd{background:#f1f5f9;border:1px solid var(--line);border-bottom-width:2px;bord
 <main>
  <canvas id="c"></canvas>
  <div class="vbar"><button id="vIso" class="on">3D</button><button id="vTop">Topo</button><button id="vFit">Enquadrar</button><span class="sep"></span><span class="hint" style="padding:0 2px">Colocar em</span><select id="nivAtivo"></select></div>
- <div class="empty" id="empty"><div><h2>Comece sua operação</h2><p>Parta de um modelo pronto ou monte do zero: defina o espaço, adicione docas, racks, esteiras, pessoas e níveis.</p><button class="pri" id="eMod">Ver modelos</button> <button class="sec" id="eIt">Adicionar itens</button></div></div>
+ <div id="marq" style="position:absolute;display:none;border:1.5px solid #ee4d2d;background:rgba(238,77,45,.12);pointer-events:none;z-index:4"></div><div class="empty" id="empty"><div><h2>Comece sua operação</h2><p>Parta de um modelo pronto ou monte do zero: defina o espaço, adicione docas, racks, esteiras, pessoas e níveis.</p><button class="pri" id="eMod">Ver modelos</button> <button class="sec" id="eIt">Adicionar itens</button></div></div>
 </main>
 <aside id="right"><div class="scroll"><div id="props"></div><div id="sum" class="sum"></div></div></aside>
 <footer><span id="sCoord">X — · Z —</span><span id="sSel"></span><span class="sp"></span><span>Grade <select id="snapSel"><option value="0.5">0,5 m</option><option value="0.25">0,25 m</option><option value="1">1 m</option><option value="0">livre</option></select></span><span id="sCount"></span></footer>
@@ -111,7 +112,10 @@ const CAT={
  balanca:{nome:'Balança de piso',grupo:'Postos de trabalho',cor:'#facc15',props:{},foot:p=>[1.1,1.1]},
  impressora:{nome:'Impressora de etiquetas',grupo:'Postos de trabalho',cor:'#475569',props:{},foot:p=>[0.7,0.6]},
  portal:{nome:'Portal de leitura',grupo:'Postos de trabalho',cor:'#22c55e',props:{largura:N(3,1.5,6,0.5,'Largura (m)')},foot:p=>[p.largura,0.6]},
- gaylord:{nome:'Gaylord',grupo:'Cargas',cor:'#c4935c',props:{cheio:N(80,0,100,5,'Preenchimento (%)')},foot:p=>[1.3,1.3]},
+ gaylord:{nome:'Gaylord',grupo:'Cargas',cor:'#c4935c',props:{altura:S_('padrão',['meia altura','padrão','alta'],'Altura'),cheio:N(80,0,100,5,'Preenchimento (%)')},foot:p=>[1.3,1.3]},
+ pilhapal:{nome:'Pilha de paletes',grupo:'Cargas',cor:'#c99f68',props:{paletes:N(10,1,30,1,'Paletes por pilha'),pilhas:N(1,1,12,1,'Pilhas lado a lado')},foot:p=>[p.pilhas*1.3,0.9]},
+ desmontada:{nome:'Gaylords desmontadas',grupo:'Cargas',cor:'#c4935c',props:{camadas:N(12,1,40,1,'Camadas')},foot:p=>[1.3,1.2]},
+ corrente:{nome:'Proteção com corrente',grupo:'Segurança e apoio',cor:'#facc15',props:{comprimento:N(5,1,60,0.5,'Comprimento (m)'),cor:S_('#facc15',['#facc15','#ef4444','#2563eb','#ffffff'],'Cor da corrente')},foot:p=>[p.comprimento,0.5]},
  gaiola:{nome:'Gaiola de rota',grupo:'Cargas',cor:'#9aa6b8',props:{pacotes:N(8,0,20,1,'Pacotes')},foot:p=>[1.1,1.1]},
  palete:{nome:'Palete com caixas',grupo:'Cargas',cor:'#c99f68',props:{caixas:N(6,0,18,1,'Caixas')},foot:p=>[1.2,0.8]},
  pilha:{nome:'Pilha de caixas',grupo:'Cargas',cor:'#d4a46a',props:{camadas:N(3,1,6,1,'Camadas'),colunas:N(3,1,6,1,'Colunas')},foot:p=>[p.colunas*0.4,p.colunas*0.4]},
@@ -145,7 +149,9 @@ const CAT={
  pessoa:{nome:'Pessoa',grupo:'Pessoas',cor:'#ff8a3d',props:{funcao:S_('Operador',Object.keys(FUNCOES),'Função'),nome:X_('','Nome (opcional)'),posto:{t:'p',v:'',l:'Posto (onde trabalha)'}},foot:p=>[0.8,0.8]}
 };
 const GRUPOS=['Armazenagem','Movimentação','Postos de trabalho','Cargas','Docas e veículos','Estrutura','Áreas','Segurança e apoio'];
-const RESIZE={zona:{w:'largura',d:'profundidade'},sala:{w:'largura',d:'profundidade'},camara:{w:'largura',d:'profundidade'},rampa:{w:'comprimento',d:'largura'},mesa:{w:'comprimento'},embalagem:{w:'comprimento'},bancada:{w:'comprimento'},esteira:{w:'comprimento'},rolete:{w:'comprimento'},parede:{w:'comprimento'},divisoria:{w:'comprimento'},grade:{w:'comprimento'},barreira:{w:'comprimento'},faixa:{w:'comprimento'},portal:{w:'largura'}};
+const PRESETS=[{k:'gl_meia',tipo:'gaylord',nome:'Gaylord meia altura',grupo:'Cargas',props:{altura:'meia altura',cheio:50}},{k:'gl_meia_v',tipo:'gaylord',nome:'Gaylord meia altura vazia',grupo:'Cargas',props:{altura:'meia altura',cheio:0}},{k:'gl_alta',tipo:'gaylord',nome:'Gaylord alta',grupo:'Cargas',props:{altura:'alta',cheio:70}},
+ {k:'pl_vazio',tipo:'palete',nome:'Palete vazio',grupo:'Cargas',props:{caixas:0}},{k:'pl_pilha6',tipo:'pilhapal',nome:'6 pilhas de paletes',grupo:'Cargas',props:{paletes:10,pilhas:6}}];
+const RESIZE={corrente:{w:'comprimento'},zona:{w:'largura',d:'profundidade'},sala:{w:'largura',d:'profundidade'},camara:{w:'largura',d:'profundidade'},rampa:{w:'comprimento',d:'largura'},mesa:{w:'comprimento'},embalagem:{w:'comprimento'},bancada:{w:'comprimento'},esteira:{w:'comprimento'},rolete:{w:'comprimento'},parede:{w:'comprimento'},divisoria:{w:'comprimento'},grade:{w:'comprimento'},barreira:{w:'comprimento'},faixa:{w:'comprimento'},portal:{w:'largura'}};
 
 /* ====================== estado ====================== */
 function novoEstado(ed){const casa=ed==='casa';return{schema:'wms3d-operacao',versao:2,nome:'',edificacao:casa?'casa':'galpao',
@@ -257,7 +263,12 @@ const BUILD={
  balanca(p){const g=new T.Group();bx(1.0,0.1,1.0,0x6b7280,0,0.06,0,g);bx(0.96,0.02,0.96,0xfacc15,0,0.12,0,g);bx(0.08,1.1,0.08,0x374151,0.46,0.6,-0.46,g);bx(0.4,0.22,0.06,0x111827,0.3,1.15,-0.46,g);return g;},
  impressora(p){const g=new T.Group();bx(0.5,0.7,0.5,0x374151,0,0.35,0,g);bx(0.42,0.26,0.34,0x1f2937,0,0.83,0,g);bx(0.34,0.02,0.1,0xf8fafc,0,0.98,0.15,g);const r=cy(0.1,0.1,0.1,0xe5e7eb,0,0.97,-0.1,g,12);r.rotation.z=PI/2;return g;},
  portal(p){const g=new T.Group(),w=p.largura;[-1,1].forEach(s=>bx(0.18,2.6,0.4,0x1f2937,s*w/2,1.3,0,g));bx(w+0.3,0.3,0.5,0x1f2937,0,2.7,0,g);bx(w-0.4,0.08,0.3,0x22ff88,0,2.52,0,g,{emissive:0x22ff88,emissiveIntensity:0.8});return g;},
- gaylord(p){const g=new T.Group();pallet(g,1.3,1.3);const h=1.85;bx(1.3,h,1.3,M(0xc4935c,{transparent:true,opacity:0.96}),0,0.14+h/2,0,g);const f=Math.max(0.02,p.cheio/100);bx(1.2,h*f,1.2,0xdcc29a,0,0.14+h*f/2,0,g);bx(1.34,0.08,1.34,0xa47645,0,0.14+h,0,g);return g;},
+ pilhapal(p){const g=new T.Group(),n=p.pilhas;for(let i=0;i<n;i++){const x=-(n-1)*0.65+i*1.3;for(let k=0;k<p.paletes;k++)bx(1.2,0.12,0.8,k%2?0xc99f68:0xb98a55,x+rnd(-0.012,0.012),0.07+k*0.135,rnd(-0.012,0.012),g);}return g;},
+ desmontada(p){const g=new T.Group();pallet(g,1.3,1.2);for(let k=0;k<p.camadas;k++)bx(1.3,0.045,1.18,pick([0xc4935c,0xb98a55,0xcc9d66]),rnd(-0.02,0.02),0.17+k*0.047,rnd(-0.02,0.02),g);return g;},
+ corrente(p){const g=new T.Group(),L=p.comprimento,n=Math.max(1,Math.round(L/2.5)),sp=L/n,ch=new T.Color(p.cor).getHex();
+  for(let i=0;i<=n;i++){const x=-L/2+i*sp;cy(0.22,0.26,0.08,0x15171b,x,0.04,0,g,16);for(let k=0;k<6;k++)cy(0.05,0.05,0.17,k%2?0x15171b:0xf5c518,x,0.17+k*0.17,0,g,10);}
+  for(let i=0;i<n;i++){const x0=-L/2+i*sp,x1=x0+sp;for(let k=0;k<10;k++){const t0=k/10,t1=(k+1)/10,xa=x0+(x1-x0)*t0,xb=x0+(x1-x0)*t1,ya=1.0-Math.sin(t0*PI)*0.28,yb=1.0-Math.sin(t1*PI)*0.28;const m=bx(Math.hypot(xb-xa,yb-ya)+0.02,0.05,0.05,ch,(xa+xb)/2,(ya+yb)/2,0,g);m.rotation.z=Math.atan2(yb-ya,xb-xa);m.castShadow=false;}}return g;},
+ gaylord(p){const g=new T.Group();pallet(g,1.3,1.3);const h=({'meia altura':0.95,'padrão':1.85,alta:2.4})[p.altura]||1.85;bx(1.3,h,1.3,M(0xc4935c,{transparent:true,opacity:0.96}),0,0.14+h/2,0,g);const f=Math.max(0.02,p.cheio/100);bx(1.2,h*f,1.2,0xdcc29a,0,0.14+h*f/2,0,g);bx(1.34,0.08,1.34,0xa47645,0,0.14+h,0,g);return g;},
  gaiola(p){const g=new T.Group();bx(1.1,0.16,1.1,0x55607a,0,0.12,0,g);[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>bx(0.05,1.62,0.05,0x9aa6b8,a*0.53,1.0,b*0.53,g));
   [[0,-0.53,0],[-0.53,0,1],[0.53,0,1]].forEach(([x,z,r])=>{const w=bx(r?0.02:1.06,1.5,r?1.06:0.02,M(0x9aa6b8,{transparent:true,opacity:0.35,depthWrite:false}),x,0.95,z,g);w.castShadow=false;});
   bx(0.66,0.28,0.05,0xf26a2e,0,1.7,-0.56,g);for(let i=0;i<p.pacotes;i++)pkg(g,i%2?0.22:-0.22,0.3+Math.floor(i/4)*0.3,(Math.floor(i/2)%2)?0.22:-0.22,1);return g;},
@@ -330,7 +341,7 @@ const dflt=t=>{const o={};for(const k in CAT[t].props)o[k]=CAT[t].props[k].v;ret
 const TH={};
 function makeThumbs(){const r=new T.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});r.setSize(220,150,false);r.outputEncoding=T.sRGBEncoding;
   const sc=new T.Scene();sc.add(new T.HemisphereLight(0xffffff,0x94a3b8,1.0));const dl=new T.DirectionalLight(0xffffff,0.8);dl.position.set(3,6,4);sc.add(dl);const cm=new T.PerspectiveCamera(32,220/150,0.1,500);
-  const keys=Object.keys(CAT).filter(k=>k!=='pessoa').map(k=>[k,k,dflt(k)]).concat(Object.keys(FUNCOES).map(f=>['p_'+f,'pessoa',Object.assign(dflt('pessoa'),{funcao:f})]));
+  const keys=Object.keys(CAT).filter(k=>k!=='pessoa').map(k=>[k,k,dflt(k)]).concat(PRESETS.map(p=>['v_'+p.k,p.tipo,Object.assign(dflt(p.tipo),p.props)])).concat(Object.keys(FUNCOES).map(f=>['p_'+f,'pessoa',Object.assign(dflt('pessoa'),{funcao:f})]));
   keys.forEach(([key,tipo,props])=>{try{const o=BUILD[tipo](props);o.traverse(c=>{if(c.isSprite)c.visible=false;});sc.add(o);const b=new T.Box3().setFromObject(o),c=b.getCenter(new T.Vector3()),s=b.getSize(new T.Vector3()),L=Math.max(s.x,s.y*1.2,s.z)*1.25+0.3;
     cm.position.set(c.x+L*0.95,c.y+L*0.7,c.z+L*1.25);cm.lookAt(c);r.render(sc,cm);TH[key]=r.domElement.toDataURL('image/png');sc.remove(o);}catch(e){console.warn('thumb',key,e);}});
   r.dispose();}
@@ -342,7 +353,7 @@ function addItem(tipo,x,z,props,extra){const it=Object.assign({id:S.proximoId++,
 function removeItem(id){const i=S.itens.findIndex(q=>q.id===id);if(i<0)return;if(S.itens[i].obj)itemsG.remove(S.itens[i].obj);S.itens.splice(i,1);S.itens.forEach(q=>{if(q.tipo==='pessoa'&&q.props.posto===id)q.props.posto='';});}
 function rebuildAll(){while(itemsG.children.length)itemsG.remove(itemsG.children[0]);buildHall();S.itens.forEach(mountItem);}
 
-let SEL=null,placing=null,ghost=null,drag=null,snapV=0.5,nivAtivo=0;
+let MS=[],marq=null;let SEL=null,placing=null,ghost=null,drag=null,snapV=0.5,nivAtivo=0;
 const ray=new T.Raycaster(),mouse=new T.Vector2(),plane=new T.Plane(new T.Vector3(0,1,0),0);
 const snap=(v,s)=>(s||snapV)?Math.round(v/(s||snapV))*(s||snapV):v;
 function ptr(e){const r=cv.getBoundingClientRect();mouse.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1);ray.setFromCamera(mouse,cam);}
@@ -359,7 +370,7 @@ function mkHandle(pos,apply,cur){const m=new T.Mesh(new T.SphereGeometry(0.5,14,
   const ring=new T.Mesh(new T.RingGeometry(0.62,0.8,20),new T.MeshBasicMaterial({color:0xffffff,depthTest:false,side:T.DoubleSide}));ring.rotation.x=-PI/2;ring.renderOrder=19;m.add(ring);hdlG.add(m);HANDLES.push({m,apply,cur});return m;}
 function buildHandles(){while(hdlG.children.length)hdlG.remove(hdlG.children[0]);HANDLES=[];
   const it=selItem(),lv=selLevel();
-  if(it&&it.obj&&RESIZE[it.tipo]){const rs=RESIZE[it.tipo],c=CAT[it.tipo],[w,d]=c.foot(it.props),th=it.rot*PI/180,co=Math.cos(th),si=Math.sin(th),y=yOf(it)+0.3;
+  if(MS.length<=1&&it&&it.obj&&RESIZE[it.tipo]){const rs=RESIZE[it.tipo],c=CAT[it.tipo],[w,d]=c.foot(it.props),th=it.rot*PI/180,co=Math.cos(th),si=Math.sin(th),y=yOf(it)+0.3;
     const add=(axis,s)=>{const key=rs[axis],pd=c.props[key],len=axis==='w'?w:d;const lx=axis==='w'?s*len/2:0,lz=axis==='d'?s*len/2:0;
       const pos=new T.Vector3(it.x+lx*co+lz*si,y,it.z-lx*si+lz*co);
       mkHandle(pos,p=>{const dx=p.x-it.x,dz=p.z-it.z,ll=axis==='w'?dx*co-dz*si:dx*si+dz*co,cur=axis==='w'?CAT[it.tipo].foot(it.props)[0]:CAT[it.tipo].foot(it.props)[1],keep=-s*cur/2,e=snap(ll);
@@ -367,7 +378,7 @@ function buildHandles(){while(hdlG.children.length)hdlG.remove(hdlG.children[0])
     add('w',1);add('w',-1);if(rs.d){add('d',1);add('d',-1);}}
   if(lv){const y=lv.elevacao+0.4;[['E',1,0],['W',-1,0],['S',0,1],['N',0,-1]].forEach(([k,sx,sz])=>{const pos=new T.Vector3(lv.x+sx*lv.largura/2,y,lv.z+sz*lv.profundidade/2);
     mkHandle(pos,p=>{if(sx){const fixed=lv.x-sx*lv.largura/2,e=snap(p.x),w=clamp(Math.abs(e-fixed),3,200);lv.largura=w;lv.x=fixed+sx*w/2;}else{const fixed=lv.z-sz*lv.profundidade/2,e=snap(p.z),d=clamp(Math.abs(e-fixed),3,200);lv.profundidade=d;lv.z=fixed+sz*d/2;}buildLevels();buildHandles();outline();},sx?'ew-resize':'ns-resize');});}
-  if(!it&&!lv){POLY.forEach((a,i)=>{const b=POLY[(i+1)%POLY.length],mx=(a[0]+b[0])/2,mz=(a[1]+b[1])/2,nx=b[1]-a[1],nz=-(b[0]-a[0]),L=Math.hypot(nx,nz);let ox=nx/L,oz=nz/L;if(inside(mx+ox*0.2,mz+oz*0.2,POLY)){ox=-ox;oz=-oz;}
+  if(!it&&!lv&&!MS.length){POLY.forEach((a,i)=>{const b=POLY[(i+1)%POLY.length],mx=(a[0]+b[0])/2,mz=(a[1]+b[1])/2,nx=b[1]-a[1],nz=-(b[0]-a[0]),L=Math.hypot(nx,nz);let ox=nx/L,oz=nz/L;if(inside(mx+ox*0.2,mz+oz*0.2,POLY)){ox=-ox;oz=-oz;}
       mkHandle(new T.Vector3(mx+ox*0.2,1.0,mz+oz*0.2),p=>dragWall(i,p),Math.abs(ox)>Math.abs(oz)?'ew-resize':'ns-resize');});}
 }
 function dragWall(i,p){const g=S.galpao,m=g.modelo,a=g.ala,bb=bbox(POLY),poly0=POLY.map(q=>q.slice()),gw=g.portoes.map(q=>{const A=poly0[q.parede],B=poly0[(q.parede+1)%poly0.length];return[A[0]+(B[0]-A[0])*q.centro/100,A[1]+(B[1]-A[1])*q.centro/100];});
@@ -382,36 +393,47 @@ function dragWall(i,p){const g=S.galpao,m=g.modelo,a=g.ala,bb=bbox(POLY),poly0=P
   POLY=np;g.portoes.forEach((q,k)=>{const A2=np[q.parede],B2=np[(q.parede+1)%np.length],L=Math.hypot(B2[0]-A2[0],B2[1]-A2[1]),ux=(B2[0]-A2[0])/L,uz=(B2[1]-A2[1])/L,wx=gw[k][0]+sx,wz=gw[k][1]+sz;q.centro=clamp(((wx-A2[0])*ux+(wz-A2[1])*uz)/L*100,4,96);});
   buildHall();S.itens.forEach(it=>{it.obj.position.set(it.x,yOf(it),it.z);});buildHandles();renderEspaco(true);refreshSum();}
 const casaMin=()=>S.edificacao==='casa'?3:6;
-function outline(){while(uiG.children.length)uiG.remove(uiG.children[0]);const it=selItem();if(!it||!it.obj)return;
-  const[w,d]=CAT[it.tipo].foot(it.props),l=new T.LineLoop(new T.BufferGeometry().setFromPoints([[-w/2,-d/2],[w/2,-d/2],[w/2,d/2],[-w/2,d/2]].map(q=>new T.Vector3(q[0],0.14,q[1]))),new T.LineBasicMaterial({color:0xee4d2d}));l.position.copy(it.obj.position);l.rotation.y=it.obj.rotation.y;uiG.add(l);}
-function select(sel){SEL=sel;outline();buildHandles();renderProps();updSel();}
-function updSel(){const it=selItem(),lv=selLevel();let t='';if(it){const[w,d]=CAT[it.tipo].foot(it.props);t=`<b>${CAT[it.tipo].nome}</b> #${it.id} · ${f1(w)} × ${f1(d)} m`;}else if(lv)t=`<b>${lv.nome}</b> · ${f1(lv.largura)} × ${f1(lv.profundidade)} m · elevação ${f1(lv.elevacao)} m`;$('#sSel').innerHTML=t;}
+function outline(){while(uiG.children.length)uiG.remove(uiG.children[0]);MS.forEach(id=>{const it=S.itens.find(q=>q.id===id);if(!it||!it.obj)return;
+  const[w,d]=CAT[it.tipo].foot(it.props),l=new T.LineLoop(new T.BufferGeometry().setFromPoints([[-w/2,-d/2],[w/2,-d/2],[w/2,d/2],[-w/2,d/2]].map(q=>new T.Vector3(q[0],0.14,q[1]))),new T.LineBasicMaterial({color:0xee4d2d}));l.position.copy(it.obj.position);l.rotation.y=it.obj.rotation.y;uiG.add(l);});}
+function select(sel,add){if(sel&&sel.k==='item'&&add){const i=MS.indexOf(sel.id);if(i>=0)MS.splice(i,1);else MS.push(sel.id);SEL=MS.length?{k:'item',id:MS[MS.length-1]}:null;}
+  else{SEL=sel;MS=sel&&sel.k==='item'?[sel.id]:[];}outline();buildHandles();renderProps();updSel();}
+const msItems=()=>MS.map(id=>S.itens.find(q=>q.id===id)).filter(Boolean);
+function updSel(){const it=selItem(),lv=selLevel();let t='';if(MS.length>1)t='<b>'+MS.length+' itens selecionados</b>';else if(it){const[w,d]=CAT[it.tipo].foot(it.props);t=`<b>${CAT[it.tipo].nome}</b> #${it.id} · ${f1(w)} × ${f1(d)} m`;}else if(lv)t=`<b>${lv.nome}</b> · ${f1(lv.largura)} × ${f1(lv.profundidade)} m · elevação ${f1(lv.elevacao)} m`;$('#sSel').innerHTML=t;}
 
-cv.addEventListener('pointerdown',e=>{if(e.button!==0)return;ptr(e);
+cv.addEventListener('pointerdown',e=>{if(e.button!==0)return;ptr(e);const add=e.ctrlKey||e.metaKey||e.shiftKey;
   if(placing){const p=floorPt(lvY(placing.nivel));if(p){const s=placing.tipo==='pessoa'?0.25:snapV;const it=addItem(placing.tipo,snap(p.x,s),snap(p.z,s),placing.props,{nivel:placing.nivel});if(placing.rot)it.rot=placing.rot;mountItem(it);select({k:'item',id:it.id});changed();}return;}
-  const hd=hitHandle();if(hd!=null){drag={k:'handle',h:hd};ctl.enabled=false;return;}
-  const id=hitItem();if(id!=null){select({k:'item',id});const it=selItem(),p=floorPt(yOf(it));if(p){drag={k:'item',dx:it.x-p.x,dz:it.z-p.z};ctl.enabled=false;}return;}
+  const hd=MS.length>1?null:hitHandle();if(hd!=null){drag={k:'handle',h:hd};ctl.enabled=false;return;}
+  const id=hitItem();if(id!=null){if(add){select({k:'item',id},true);return;}
+    if(!MS.includes(id))select({k:'item',id});else{SEL={k:'item',id};renderProps();updSel();}
+    const it=selItem(),p=floorPt(yOf(it));if(p){drag={k:'item',dx:it.x-p.x,dz:it.z-p.z,start:msItems().map(q=>({q,x:q.x,z:q.z}))};ctl.enabled=false;}return;}
   const lv=hitLevel();if(lv!=null){select({k:'level',id:lv});return;}
-  const w=hitWall();if(w!=null){drag={k:'wall',i:w};ctl.enabled=false;select(null);return;}
+  const w=hitWall();if(w!=null&&!add){drag={k:'wall',i:w};ctl.enabled=false;select(null);return;}
+  if(add){const r=cv.getBoundingClientRect();marq={x0:e.clientX,y0:e.clientY,x1:e.clientX,y1:e.clientY,base:MS.slice(),r};ctl.enabled=false;const d=$('#marq');d.style.display='block';return;}
   select(null);});
 cv.addEventListener('pointermove',e=>{ptr(e);const pf=floorPt(placing?lvY(placing.nivel):0);if(pf)$('#sCoord').innerHTML=`X <b>${f1(pf.x)}</b> m · Z <b>${f1(pf.z)}</b> m`;
+  if(marq){marq.x1=e.clientX;marq.y1=e.clientY;const d=$('#marq'),m=$('main').getBoundingClientRect();d.style.left=(Math.min(marq.x0,marq.x1)-m.left)+'px';d.style.top=(Math.min(marq.y0,marq.y1)-m.top)+'px';d.style.width=Math.abs(marq.x1-marq.x0)+'px';d.style.height=Math.abs(marq.y1-marq.y0)+'px';return;}
   if(drag){const it=selItem();
-    if(drag.k==='item'&&it){const p=floorPt(yOf(it));if(p){const s=it.tipo==='pessoa'?0.25:snapV;it.x=snap(p.x+drag.dx,s);it.z=snap(p.z+drag.dz,s);it.obj.position.x=it.x;it.obj.position.z=it.z;outline();buildHandles();}}
+    if(drag.k==='item'&&it){const p=floorPt(yOf(it));if(p){const s=it.tipo==='pessoa'?0.25:snapV,prim=drag.start.find(q=>q.q===it),nx=snap(p.x+drag.dx,s),nz=snap(p.z+drag.dz,s),ddx=nx-prim.x,ddz=nz-prim.z;drag.start.forEach(q=>{q.q.x=q.x+ddx;q.q.z=q.z+ddz;q.q.obj.position.x=q.q.x;q.q.obj.position.z=q.q.z;});outline();buildHandles();}}
     else if(drag.k==='handle'){const lvl=selLevel(),p=floorPt(lvl?lvl.elevacao+0.08:(it?yOf(it):0));if(p&&HANDLES[drag.h]){HANDLES[drag.h].apply(p);updSel();}}
     else if(drag.k==='wall'){const p=floorPt(0);if(p)dragWall(drag.i,p);}
     return;}
   if(placing&&ghost&&pf){ghost.visible=true;ghost.position.set(snap(pf.x,placing.tipo==='pessoa'?0.25:snapV),lvY(placing.nivel)+0.02,snap(pf.z,placing.tipo==='pessoa'?0.25:snapV));return;}
   const hd=hitHandle();let c='default';if(hd!=null)c=HANDLES[hd].cur;else if(hitItem()!=null)c='move';else if(hitWall()!=null)c='grab';cv.style.cursor=c;});
-addEventListener('pointerup',()=>{if(drag){const was=drag.k;drag=null;ctl.enabled=true;if(was==='item')renderProps(true);changed();}});
-addEventListener('keydown',e=>{const tg=document.activeElement.tagName;if(/INPUT|SELECT|TEXTAREA/.test(tg))return;const it=selItem(),ctrl=e.ctrlKey||e.metaKey;
+addEventListener('pointerup',()=>{if(marq){const m=marq;marq=null;ctl.enabled=true;$('#marq').style.display='none';const x0=Math.min(m.x0,m.x1),x1=Math.max(m.x0,m.x1),y0=Math.min(m.y0,m.y1),y1=Math.max(m.y0,m.y1);
+    if(x1-x0>4||y1-y0>4){const ids=new Set(m.base);S.itens.forEach(it=>{const v=new T.Vector3(it.x,yOf(it)+0.5,it.z).project(cam),sx=m.r.left+(v.x+1)/2*m.r.width,sy=m.r.top+(1-v.y)/2*m.r.height;if(v.z<1&&sx>=x0&&sx<=x1&&sy>=y0&&sy<=y1)ids.add(it.id);});
+      MS=[...ids];SEL=MS.length?{k:'item',id:MS[MS.length-1]}:null;outline();buildHandles();renderProps();updSel();}return;}
+  if(drag){const was=drag.k;drag=null;ctl.enabled=true;if(was==='item')renderProps(true);changed();}});
+addEventListener('keydown',e=>{const tg=document.activeElement.tagName;if(/INPUT|SELECT|TEXTAREA/.test(tg))return;const items=msItems(),it=selItem(),ctrl=e.ctrlKey||e.metaKey;
   if(ctrl&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?redo():undo();return;}if(ctrl&&e.key.toLowerCase()==='y'){e.preventDefault();redo();return;}
   if(ctrl&&e.key.toLowerCase()==='s'){e.preventDefault();salvar();return;}
+  if(ctrl&&e.key.toLowerCase()==='a'){e.preventDefault();MS=S.itens.map(i=>i.id);SEL=MS.length?{k:'item',id:MS[MS.length-1]}:null;outline();buildHandles();renderProps();updSel();return;}
   if(e.key==='Escape'){setPlacing(null);select(null);}
-  else if(e.key.toLowerCase()==='r'&&!ctrl){if(placing){placing.rot=((placing.rot||0)+90)%360;if(ghost)ghost.rotation.y=placing.rot*PI/180;}else if(it){it.rot=(it.rot+90)%360;it.obj.rotation.y=it.rot*PI/180;outline();buildHandles();renderProps(true);changed();}}
-  else if((e.key==='Delete'||e.key==='Backspace')){if(it){removeItem(it.id);select(null);changed();}else if(selLevel()){delLevel(SEL.id);}}
-  else if(e.key.toLowerCase()==='d'&&ctrl&&it){e.preventDefault();dup(it);}
-  else if(it&&e.key.startsWith('Arrow')){e.preventDefault();const s=e.shiftKey?1:(snapV||0.5);if(e.key==='ArrowLeft')it.x-=s;if(e.key==='ArrowRight')it.x+=s;if(e.key==='ArrowUp')it.z-=s;if(e.key==='ArrowDown')it.z+=s;it.obj.position.set(it.x,yOf(it),it.z);outline();buildHandles();renderProps(true);changed();}});
-function dup(it){const n=addItem(it.tipo,it.x+1,it.z+1,JSON.parse(JSON.stringify(it.props)),{nivel:it.nivel});n.rot=it.rot;mountItem(n);select({k:'item',id:n.id});changed();}
+  else if(e.key.toLowerCase()==='r'&&!ctrl){if(placing){placing.rot=((placing.rot||0)+90)%360;if(ghost)ghost.rotation.y=placing.rot*PI/180;}else if(items.length){items.forEach(q=>{q.rot=(q.rot+90)%360;q.obj.rotation.y=q.rot*PI/180;});outline();buildHandles();renderProps(true);changed();}}
+  else if((e.key==='Delete'||e.key==='Backspace')){if(items.length){items.forEach(q=>removeItem(q.id));select(null);changed();}else if(selLevel()){delLevel(SEL.id);}}
+  else if(e.key.toLowerCase()==='d'&&ctrl&&items.length){e.preventDefault();dupMany(items);}
+  else if(items.length&&e.key.startsWith('Arrow')){e.preventDefault();const s=e.shiftKey?1:(snapV||0.5);items.forEach(q=>{if(e.key==='ArrowLeft')q.x-=s;if(e.key==='ArrowRight')q.x+=s;if(e.key==='ArrowUp')q.z-=s;if(e.key==='ArrowDown')q.z+=s;q.obj.position.set(q.x,yOf(q),q.z);});outline();buildHandles();renderProps(true);changed();}});
+function dupMany(items){const ns=items.map(it=>{const n=addItem(it.tipo,it.x+1,it.z+1,JSON.parse(JSON.stringify(it.props)),{nivel:it.nivel});n.rot=it.rot;mountItem(n);return n.id;});MS=ns;SEL={k:'item',id:ns[ns.length-1]};outline();buildHandles();renderProps();updSel();changed();}
+function dup(it){dupMany([it]);}
 function setPlacing(p){placing=p;if(ghost){scene.remove(ghost);ghost=null;}document.querySelectorAll('.it').forEach(b=>b.classList.toggle('sel',!!p&&b.dataset.k===p.key));
   if(p){const props=Object.assign(dflt(p.tipo),p.props||{});ghost=BUILD[p.tipo](props);ghost.traverse(o=>{if(o.material){o.material=o.material.clone();o.material.transparent=true;o.material.opacity=0.55;}});ghost.visible=false;if(p.rot)ghost.rotation.y=p.rot*PI/180;scene.add(ghost);toast('Clique no piso para colocar · R gira · Esc cancela');}
   $('#empty').classList.toggle('on',S.itens.length===0&&!p);}
@@ -464,13 +486,14 @@ $('#nivAtivo').onchange=e=>{nivAtivo=parseInt(e.target.value);if(placing)setPlac
 let openG={};
 function renderItens(){const q=(($('#qs')&&$('#qs').value)||'').toLowerCase();
   let h=`<div class="srch">${IC.srch}<input type="text" id="qs" placeholder="Buscar item (ex.: rack, doca, esteira)" value="${q}"></div>`;
-  GRUPOS.forEach(gr=>{const ks=Object.keys(CAT).filter(k=>k!=='pessoa'&&CAT[k].grupo===gr&&(!q||CAT[k].nome.toLowerCase().includes(q)||k.includes(q)));if(!ks.length)return;const op=q||openG[gr]!==false;
-    h+=`<div class="grpH" data-g="${gr}"><span>${gr} <span class="pill">${ks.length}</span></span><span>${op?'−':'+'}</span></div>`;
-    if(op)h+=`<div class="pal">${ks.map(k=>`<button class="it" data-k="${k}" data-t="${k}"><div class="th"><img src="${TH[k]||''}" alt=""></div><span>${CAT[k].nome}</span></button>`).join('')}</div>`;});
+  GRUPOS.forEach(gr=>{const ks=Object.keys(CAT).filter(k=>k!=='pessoa'&&CAT[k].grupo===gr&&(!q||CAT[k].nome.toLowerCase().includes(q)||k.includes(q)));if(!ks.length&&!PRESETS.some(p=>p.grupo===gr&&(!q||p.nome.toLowerCase().includes(q))))return;const op=q||openG[gr]!==false;
+    h+=`<div class="grpH" data-g="${gr}"><span>${gr} <span class="pill">${ks.length+PRESETS.filter(p=>p.grupo===gr).length}</span></span><span>${op?'−':'+'}</span></div>`;
+    const pre=PRESETS.filter(p=>p.grupo===gr&&(!q||p.nome.toLowerCase().includes(q)));
+    if(op)h+=`<div class="pal">${ks.map(k=>`<button class="it" data-k="${k}" data-t="${k}"><div class="th"><img src="${TH[k]||''}" alt=""></div><span>${CAT[k].nome}</span></button>`).join('')}${pre.map(p=>`<button class="it" data-k="${p.k}" data-t="${p.tipo}" data-pp='${JSON.stringify(p.props)}'><div class="th"><img src="${TH['v_'+p.k]||''}" alt=""></div><span>${p.nome}</span></button>`).join('')}</div>`;});
   h+=`<p class="hint" style="margin-top:14px">Escolha um item e clique no piso. Continua em modo de colocação até <kbd>Esc</kbd>. Itens em níveis: escolha o nível em “Colocar em”, acima do 3D.</p>`;
   $('#pI').innerHTML=h;const qs=$('#qs');qs.oninput=()=>{const p=qs.selectionStart;renderItens();const n=$('#qs');n.focus();n.setSelectionRange(p,p);};
   $('#pI').querySelectorAll('.grpH').forEach(e=>e.onclick=()=>{openG[e.dataset.g]=!(openG[e.dataset.g]!==false);renderItens();});
-  $('#pI').querySelectorAll('.it').forEach(b=>b.onclick=()=>{const key=b.dataset.k;if(placing&&placing.key===key){setPlacing(null);return;}setPlacing({key,tipo:b.dataset.t,props:{},nivel:nivAtivo});});
+  $('#pI').querySelectorAll('.it').forEach(b=>b.onclick=()=>{const key=b.dataset.k;if(placing&&placing.key===key){setPlacing(null);return;}setPlacing({key,tipo:b.dataset.t,props:b.dataset.pp?JSON.parse(b.dataset.pp):{},nivel:nivAtivo});});
   if(placing)document.querySelectorAll('.it').forEach(b=>b.classList.toggle('sel',b.dataset.k===placing.key));}
 function renderPessoas(){const fs=Object.keys(FUNCOES);
   $('#pP').innerHTML=`<h3>Adicionar pessoa</h3><div class="pal">${fs.map(f=>`<button class="it" data-k="p_${f}" data-f="${f}"><div class="th"><img src="${TH['p_'+f]||''}" alt=""></div><span>${f}</span></button>`).join('')}</div>
@@ -480,6 +503,17 @@ function renderPessoas(){const fs=Object.keys(FUNCOES);
   $('#qadd').onclick=()=>{const f=$('#qf').value,n=parseInt($('#qn').value)||1,bb=bbox(POLY);let k=0,t=0;while(k<n&&t<800){t++;const x=snap(rnd(bb.x0+2,bb.x1-2),0.5),z=snap(rnd(bb.z0+2,bb.z1-2),0.5);if(!inside(x,z,POLY))continue;addItem('pessoa',x,z,{funcao:f});k++;}changed();toast(k+' pessoa(s) adicionada(s)');};}
 const NOPOST=['pessoa','parede','faixa','zona','cone','placa','cftv','extintor','lixeira','coluna','grade','barreira','divisoria'];
 function renderProps(soft){const it=selItem(),lv=selLevel(),el=$('#props');
+  if(MS.length>1){const its=msItems();el.dataset.id='M';el.innerHTML=`<h3>${its.length} itens selecionados</h3><div class="hint">Ctrl/Shift + clique soma ou tira itens. Shift + arrastar no vazio faz caixa de seleção. Arraste um item para mover o grupo todo.</div>
+    <h3>Ações em grupo</h3><div class="row"><button class="sec" id="mDup">${IC.copy}Duplicar</button><button class="sec dan" id="mDel">${IC.trash}Apagar todos</button></div><div class="row"><button class="sec" id="mRot">Girar 90°</button><button class="sec" id="mNone">Limpar seleção</button></div>
+    <h3>Alinhar e distribuir</h3><div class="row"><button class="sec" id="mAX">Alinhar na mesma linha (X)</button><button class="sec" id="mAZ">Alinhar na mesma coluna (Z)</button></div><div class="row"><button class="sec" id="mDX">Espaçar igual em X</button><button class="sec" id="mDZ">Espaçar igual em Z</button></div>
+    <h3>Nível</h3><div class="row one"><select id="mNv"><option value="0">Térreo</option>${S.niveis.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('')}</select></div>`;
+    const ap=fn=>{fn(its);its.forEach(q=>q.obj.position.set(q.x,yOf(q),q.z));outline();changed();};
+    $('#mDup').onclick=()=>dupMany(its);$('#mDel').onclick=()=>{its.forEach(q=>removeItem(q.id));select(null);changed();};$('#mNone').onclick=()=>select(null);
+    $('#mRot').onclick=()=>{its.forEach(q=>{q.rot=(q.rot+90)%360;q.obj.rotation.y=q.rot*PI/180;});outline();changed();};
+    $('#mAX').onclick=()=>ap(a=>{const z=a.reduce((s,q)=>s+q.z,0)/a.length;a.forEach(q=>q.z=snap(z));});$('#mAZ').onclick=()=>ap(a=>{const x=a.reduce((s,q)=>s+q.x,0)/a.length;a.forEach(q=>q.x=snap(x));});
+    $('#mDX').onclick=()=>ap(a=>{const s=a.slice().sort((p,q)=>p.x-q.x),x0=s[0].x,x1=s[s.length-1].x;s.forEach((q,i)=>q.x=snap(x0+(x1-x0)*i/Math.max(1,s.length-1)));});
+    $('#mDZ').onclick=()=>ap(a=>{const s=a.slice().sort((p,q)=>p.z-q.z),z0=s[0].z,z1=s[s.length-1].z;s.forEach((q,i)=>q.z=snap(z0+(z1-z0)*i/Math.max(1,s.length-1)));});
+    $('#mNv').onchange=e=>{const v=parseInt(e.target.value);its.forEach(q=>{q.nivel=v;q.obj.position.y=yOf(q);});outline();changed();};return;}
   if(lv){el.dataset.id='L'+lv.id;el.innerHTML=`<h3>Nível selecionado</h3><div class="card"><b style="color:var(--ink);font-size:14px">${lv.nome}</b><div class="hint">Elevação ${f1(lv.elevacao)} m · ${f1(lv.largura)} × ${f1(lv.profundidade)} m</div></div><p class="hint">Arraste as alças laranjas para aumentar ou diminuir o piso. Valores exatos na aba <b>Espaço</b>.</p><button class="sec dan" id="dlv">${IC.trash}Remover nível</button>`;$('#dlv').onclick=()=>delLevel(lv.id);return;}
   if(!it){el.dataset.id='';el.innerHTML=`<h3>Propriedades</h3><div class="hint">Nada selecionado.<br>Clique num item, num nível ou arraste uma parede do galpão.</div>`;return;}
   if(soft&&el.dataset.id===String(it.id)){const set=(id,v)=>{const e=$(id);if(e&&document.activeElement!==e)e.value=v;};set('#px',it.x);set('#pz',it.z);set('#pr',it.rot);Object.keys(CAT[it.tipo].props).forEach(k=>{const e=el.querySelector('[data-p="'+k+'"]');if(e&&document.activeElement!==e&&CAT[it.tipo].props[k].t==='n')e.value=it.props[k];});return;}
@@ -494,7 +528,12 @@ function renderProps(soft){const it=selItem(),lv=selLevel(),el=$('#props');
   el.innerHTML=`<h3>${c.nome} <span class="pill">#${it.id}</span></h3><div class="card" style="padding:6px"><img src="${TH[it.tipo==='pessoa'?'p_'+it.props.funcao:it.tipo]||''}" style="width:100%;border-radius:7px;background:linear-gradient(#f8fafc,#eef2f7);display:block"></div>${campos}
   <h3>Posição</h3><div class="row">${fld('X (m)',`<input type="number" id="px" step="0.25" value="${it.x}">`)}${fld('Z (m)',`<input type="number" id="pz" step="0.25" value="${it.z}">`)}</div>
   <div class="row">${fld('Giro (°)',`<input type="number" id="pr" step="15" value="${it.rot}">`)}${fld('Nível',`<select id="pn"><option value="0">Térreo</option>${S.niveis.map(l=>`<option value="${l.id}" ${l.id===it.nivel?'selected':''}>${l.nome}</option>`).join('')}</select>`)}</div>
+  <h3>Repetir em fileira ou matriz</h3><div class="row"><div><label class="l">Quantidade em X</label><input type="number" id="mxC" min="1" max="60" value="5"></div><div><label class="l">Quantidade em Z</label><input type="number" id="mxR" min="1" max="30" value="1"></div></div>
+  <div class="row"><div><label class="l">Espaço X (m)</label><input type="number" id="mxDX" step="0.1" value="${f1(CAT[it.tipo].foot(it.props)[0]+0.1).replace(',','.')}"></div><div><label class="l">Espaço Z (m)</label><input type="number" id="mxDZ" step="0.1" value="${f1(CAT[it.tipo].foot(it.props)[1]+0.1).replace(',','.')}"></div></div><button class="sec" id="mxB" style="width:100%;justify-content:center;margin-bottom:8px">Criar cópias</button>
   <div class="row"><button class="sec" id="pd">${IC.copy}Duplicar</button><button class="sec dan" id="px2">${IC.trash}Apagar</button></div>`;
+  $('#mxB').onclick=()=>{const c=clamp(parseInt($('#mxC').value)||1,1,60),r=clamp(parseInt($('#mxR').value)||1,1,30),dx=parseFloat($('#mxDX').value)||1,dz=parseFloat($('#mxDZ').value)||1,th=it.rot*PI/180,co=Math.cos(th),si=Math.sin(th),ids=[it.id];
+    for(let j=0;j<r;j++)for(let i=0;i<c;i++){if(!i&&!j)continue;const ox=i*dx,oz=j*dz,n=addItem(it.tipo,it.x+ox*co+oz*si,it.z-ox*si+oz*co,JSON.parse(JSON.stringify(it.props)),{nivel:it.nivel});n.rot=it.rot;mountItem(n);ids.push(n.id);}
+    MS=ids;SEL={k:'item',id:ids[ids.length-1]};outline();buildHandles();renderProps();updSel();changed();toast((ids.length-1)+' cópia(s) criada(s)');};
   el.querySelectorAll('[data-p]').forEach(e=>e.onchange=()=>{const k=e.dataset.p,d=ps[k];it.props[k]=d.t==='n'?clamp(parseFloat(e.value)||0,d.min,d.max):d.t==='b'?e.value==='1':d.t==='p'?(e.value?parseInt(e.value):''):e.value;mountItem(it);outline();buildHandles();refreshSum();updSel();changed(true);});
   const num=(id,fn)=>{$(id).onchange=e=>{fn(parseFloat(e.target.value)||0);it.obj.position.set(it.x,yOf(it),it.z);it.obj.rotation.y=it.rot*PI/180;outline();buildHandles();changed(true);};};
   num('#px',v=>it.x=v);num('#pz',v=>it.z=v);num('#pr',v=>it.rot=((v%360)+360)%360);
@@ -590,7 +629,7 @@ $('#bNovo').onclick=()=>{if(!S.itens.length||confirm('Descartar a operação atu
 function modelosModal(){modal(`<h2>Partir de um modelo</h2><p class="hint">Layouts aproximados para você ajustar do seu jeito.</p><div class="tp"><div class="c" data-m="jales"><b>XPT_SP_Jales</b><span class="hint">Esteira central, mesas, indução e rotas.</span></div><div class="c" data-m="penha"><b>XPT_RJ_Rio_Penha_02</b><span class="hint">Mesas em sequência, rotas, C de gaiolas e 2º andar.</span></div><div class="c" data-m="cross"><b>Cross-docking com docas</b><span class="hint">16 docas, racks, esteira longa e empilhadeiras.</span></div><div class="c" data-m="casa"><b>Casa como operação</b><span class="hint">Casa com cômodos: recebimento, separação e expedição.</span></div></div><p style="margin-top:14px"><button class="sec" id="mc">Fechar</button></p>`);
   $('#mbox').querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{const m=b.dataset.m;closeM();if(!S.itens.length||confirm('Substituir a operação atual?'))tpl(m);});$('#mc').onclick=closeM;}
 $('#bModelo').onclick=modelosModal;$('#eMod').onclick=modelosModal;$('#eIt').onclick=()=>tab('I');
-$('#bHelp').onclick=()=>{modal(`<h2>Atalhos e dicas</h2><div class="sum" style="margin-top:8px"><div><span>Colocar item</span><b>escolha na aba Itens e clique no piso</b></div><div><span>Mover</span><b>arraste o item</b></div><div><span>Redimensionar</span><b>alças laranjas (itens, níveis e paredes)</b></div><div><span>Girar 90°</span><b><kbd>R</kbd></b></div><div><span>Mover fino</span><b>setas · <kbd>Shift</kbd> = 1 m</b></div><div><span>Duplicar</span><b><kbd>Ctrl</kbd>+<kbd>D</kbd></b></div><div><span>Apagar</span><b><kbd>Delete</kbd></b></div><div><span>Desfazer / refazer</span><b><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd></b></div><div><span>Salvar</span><b><kbd>Ctrl</kbd>+<kbd>S</kbd></b></div><div><span>Girar a câmera</span><b>botão esquerdo no vazio</b></div><div><span>Deslocar a câmera</span><b>botão direito</b></div></div><p class="hint" style="margin-top:10px">Seu trabalho é guardado automaticamente como rascunho neste navegador.</p><p><button class="sec" id="mc">Fechar</button></p>`);$('#mc').onclick=closeM;};
+$('#bHelp').onclick=()=>{modal(`<h2>Atalhos e dicas</h2><div class="sum" style="margin-top:8px"><div><span>Colocar item</span><b>escolha na aba Itens e clique no piso</b></div><div><span>Mover</span><b>arraste o item</b></div><div><span>Redimensionar</span><b>alças laranjas (itens, níveis e paredes)</b></div><div><span>Girar 90°</span><b><kbd>R</kbd></b></div><div><span>Mover fino</span><b>setas · <kbd>Shift</kbd> = 1 m</b></div><div><span>Duplicar</span><b><kbd>Ctrl</kbd>+<kbd>D</kbd></b></div><div><span>Selecionar vários</span><b><kbd>Ctrl</kbd>/<kbd>Shift</kbd> + clique · <kbd>Shift</kbd> + arrastar no vazio · <kbd>Ctrl</kbd>+<kbd>A</kbd></b></div><div><span>Apagar</span><b><kbd>Delete</kbd></b></div><div><span>Desfazer / refazer</span><b><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd></b></div><div><span>Salvar</span><b><kbd>Ctrl</kbd>+<kbd>S</kbd></b></div><div><span>Girar a câmera</span><b>botão esquerdo no vazio</b></div><div><span>Deslocar a câmera</span><b>botão direito</b></div></div><p class="hint" style="margin-top:10px">Seu trabalho é guardado automaticamente como rascunho neste navegador.</p><p><button class="sec" id="mc">Fechar</button></p>`);$('#mc').onclick=closeM;};
 $('#vIso').onclick=()=>{frame();$('#vIso').classList.add('on');$('#vTop').classList.remove('on');};$('#vFit').onclick=frame;
 $('#vTop').onclick=()=>{const d=cam.position.length();cam.position.set(0.01,d,0.01);ctl.target.set(0,0,0);ctl.update();$('#vTop').classList.add('on');$('#vIso').classList.remove('on');};
 $('#snapSel').onchange=e=>{snapV=parseFloat(e.target.value);};
