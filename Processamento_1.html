@@ -2475,16 +2475,16 @@ async function rjFeedLoop(w){
 async function rjPassLoop(w,i,FROM,TO){
   await wait(0.8+i*0.5);const nf=RJM.indexOf(FROM)+1,nt=nf+1,hz=w.home[1],reach=s=>Math.abs(s.z-hz)<=1.25;
   while(true){
-    const full=FROM.filter(s=>s.p&&!s.res&&reach(s)),free=TO.filter(s=>!s.p&&!s.res&&reach(s));
+    const full=FROM.filter(s=>s.p&&!s.res&&reach(s)),free=TO.filter(s=>(s.stack?s.stack.length<4:!s.p)&&!s.res&&reach(s));
     if(!full.length||!free.length){w.pose='idle';w.status=!full.length?'Aguardando pacote na Mesa '+nf:'Mesa '+nt+' cheia';await turnTo(w,-PI/2);await wait(0.4);continue;}
     full.sort((a,b)=>Math.abs(a.z-hz)-Math.abs(b.z-hz));const s=full[0];s.res=true;
-    free.sort((a,b)=>Math.abs(a.z-hz)-Math.abs(b.z-hz));const d=free[0];d.res=true;
+    free.sort((a,b)=>(a.stack?a.stack.length-b.stack.length:0)||Math.abs(a.z-hz)-Math.abs(b.z-hz));const d=free[0];d.res=true;
     w.status='Pegando na Mesa '+nf;await turnTo(w,-PI/2);w.pose='reach';await wait(0.3);
     const p=s.p;s.p=null;s.res=false;grpRJP.remove(p);setCarry(w,p.material);
     w.status=nf===1?'Recebimento: bipando':'Criação de AT: bipando';await wait(0.15);await bip(w);await wait(0.15);
     w.status='Passando para a Mesa '+nt;await turnTo(w,PI/2);
     grpRJP.add(p);p.position.copy(handsWorld(w));setCarry(w,false);w.pose='reach';
-    await flyTo(p,new T.Vector3(d.x,TBL_Y+0.21,d.z),0.3,0.06);d.p=p;d.res=false;w.pose='idle';
+    await flyTo(p,new T.Vector3(d.x,TBL_Y+0.21+(d.stack?d.stack.length*0.34:0),d.z),0.3,0.06);if(d.stack)d.stack.push(p);d.p=p;d.res=false;w.pose='idle';
     await wait(rnd(0.1,0.35));
   }
 }
@@ -2506,7 +2506,6 @@ async function rjSortLoop(w,i,grp){
       const sl=s[Math.floor(Math.random()*s.length)];sl.res=true;zz=sl.z;
       w.status='Pegando o pacote na Mesa 3';await moveAlong(w,[[SORTX,w.g.position.z],[SORTX,sl.z],[tx,sl.z]],2.4);await turnTo(w,-PI/2);w.pose='reach';await wait(0.3);
       const p=sl.p;sl.stack.pop();sl.p=sl.stack.length?sl.stack[sl.stack.length-1]:null;sl.res=false;grpRJP.remove(p);setCarry(w,p.material);
-      (async()=>{await wait(1.8);const k=makePkg(rint(0,5));k.rotation.y=rnd(-0.4,0.4);grpRJP.add(k);k.position.set(sl.x+rnd(-0.04,0.04),TBL_Y+0.21+sl.stack.length*0.34,sl.z+rnd(-0.04,0.04));sl.stack.push(k);sl.p=k;})();   // a Mesa 3 continua acumulada
       if(Math.random()<0.3)fpkDrop(sl.x+0.8,TBL_Y+0.5,sl.z,rnd(5.1,5.7),sl.z+rnd(-0.5,0.5));
     }
     w.status='Saindo com o pacote para a rota';await moveAlong(w,[[SORTX,zz],[SORTX+3.2,zz]],2.4);

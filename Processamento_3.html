@@ -2231,35 +2231,42 @@ function buildRJ(){
   regActor=(a,tag,md,bg)=>{const nm=/Motorista/.test(a.role||'')?'Motorista '+(++nM):'Funcionário '+(++nF);a.name=nm;return _ra(a,nm,md,bg);};
   try{buildRJ0();}finally{regActor=_ra;}
 }
-/* ================== PROCESSAMENTO 3: mesa vertical + 2 braços; ao encher o fim de um braço, a equipe passa para o outro braço ================== */
-const P3={act:0,VT:[[],[]],ARM:[],END:[[],[]],U:[]};
+/* ================== PROCESSAMENTO 3: mesa vertical + 2 braços; ao encher o fim de um braço, TODA a equipe passa para o outro braço ================== */
+const P3={act:0,VT:[[],[]],ARM:[],END:[[],[]],U:[],sw:0};
+window.P3=P3;
 const AZ3=[-2.1,2.1],slotP=(x,z)=>new T.Vector3(x,TBL_Y+0.21,z);
 const slot3=(x,z)=>({x,z,p:null,res:false,stack:[]});
-const STAND3=(role,arm)=>{const o=arm?1:-1;return {A:{x:0.3,z:3.1*o},B:{x:1.4,z:1.1*o},C:{x:2.6,z:3.1*o},D:{x:3.7,z:1.1*o}}[role];};
+const SG=a=>a?1:-1;
+const STAND3=(role,arm)=>{const o=SG(arm);return {A:{x:0.3,z:3.1*o},B:{x:1.4,z:1.1*o}}[role];};
+const SEPST=(i,arm)=>{const o=SG(arm),az=AZ3[arm];return [{x:7.5,z:az,ry:-PI/2},{x:6.3,z:az+o*1.25,ry:o>0?PI:0},{x:5.2,z:az+o*1.25,ry:o>0?PI:0},{x:6.3,z:az-o*1.25,ry:o>0?0:PI},{x:5.2,z:az-o*1.25,ry:o>0?0:PI}][i];};
 function buildRJ0(){
   const TT=(a,b,c,d)=>table(a,b,c,d,RJ);
   TT(-1.3,-0.1,-3.0,3.0);TT(-0.1,7.0,-2.6,-1.6);TT(-0.1,7.0,1.6,2.6);                           // mesa vertical e dois braços
   P3.VT=[[-2.5,-2.0,-1.5].map(z=>slot3(-0.75,z)),[1.5,2.0,2.5].map(z=>slot3(-0.75,z))];
-  P3.ARM=[0,1].map(a=>({a:slot3(0.8,AZ3[a]),b:slot3(2.0,AZ3[a]),c:slot3(3.2,AZ3[a]),d:slot3(4.3,AZ3[a])}));
+  P3.ARM=[0,1].map(a=>({a:slot3(0.8,AZ3[a]),b:slot3(2.0,AZ3[a])}));
   P3.END=[0,1].map(a=>[6.5,6.0,5.5,5.0].map(x=>slot3(x,AZ3[a])));
-  P3.END.forEach((E,a)=>{E.forEach(s=>{const n=rint(2,3);for(let k=0;k<n;k++){const q=makePkg(rint(0,5));q.rotation.y=rnd(-0.4,0.4);grpRJP.add(q);q.position.set(s.x+rnd(-0.05,0.05),TBL_Y+0.21+k*0.34,s.z+rnd(-0.05,0.05));s.stack.push(q);}s.p=s.stack[s.stack.length-1];});
-    for(let k=0;k<3;k++)fpkSpawn(rnd(7.55,8.0),AZ3[a]+rnd(-0.9,0.9));});                      // pacotes acumulados no fim dos braços e alguns no chão
+  P3.END.forEach((E,a)=>{E.forEach(s=>{const n=a===0?rint(2,3):0;for(let k=0;k<n;k++){const q=makePkg(rint(0,5));q.rotation.y=rnd(-0.4,0.4);grpRJP.add(q);q.position.set(s.x+rnd(-0.05,0.05),TBL_Y+0.21+k*0.34,s.z+rnd(-0.05,0.05));s.stack.push(q);}s.p=s.stack.length?s.stack[s.stack.length-1]:null;});
+    for(let k=0;k<(a===0?3:1);k++)fpkSpawn(rnd(7.7,8.2),AZ3[a]+rnd(-0.9,0.9));});
   [-1.8,0,1.8].forEach((z,i)=>{const u=i===1?makeSackPallet(9):makeGaylord(9);grpRJP.add(u);u.position.set(-4.9,FLOOR,z);P3.U.push({g:u,x:-4.9,z,res:false});});   // carga da indução
   const mk=(role,i,x,z,ry,f)=>{const w=makeWorker('F',role,{skin:SKIN[i%4],female:!!f});regActor(w,'F','rjp');w.g.position.set(x,FLOOR,z);w.g.rotation.y=ry;w.status=role;return w;};
   const I=mk('Indução',0,-3.7,0,-PI/2,1);
-  const stg={};[['A','Recebimento'],['B','Inclusão na AT'],['C','Separação'],['D','Separação']].forEach(([r,n],k)=>{const st=STAND3(r,0);stg[r]=mk(n,k+1,st.x,st.z,0,k%2);});
-  giveScanner(stg.A,0.3,-2.4,PI);giveScanner(stg.B,1.4,-2.0,0);giveScanner(stg.C,2.6,-2.4,PI);giveScanner(stg.D,3.7,-2.0,0);
-  giveScanner({},0.3,2.2,0);giveScanner({},1.4,1.6,PI);giveScanner({},2.6,2.2,0);giveScanner({},3.7,1.6,PI);      // notebooks também no braço de baixo
-  const E=mk('Separação',1,7.3,AZ3[0],-PI/2,1),F=mk('Separação',2,7.3,AZ3[1],-PI/2,0);
-  p3Induct(I);p3Stage(stg.A,'A','Recebimento',null,'a',true);p3Stage(stg.B,'B','Inclusão na AT','a','b');p3SepMid(stg.C,'C','c');p3SepMid(stg.D,'D','d');
-  p3Conv(0);p3Conv(1);p3Sep(E,0);p3Sep(F,1);p3Ctl();
+  const A=mk('Recebimento',1,STAND3('A',0).x,STAND3('A',0).z,0,0),B=mk('Inclusão na AT',2,STAND3('B',0).x,STAND3('B',0).z,PI,1);
+  giveScanner(A,0.3,-2.4,PI);giveScanner(B,1.4,-2.0,0);
+  giveScanner({},0.3,2.2,0);giveScanner({},1.4,1.6,PI);                                   // 4 computadores: 2 em cada braço
+  p3Induct(I);p3Stage(A,'A','Recebimento',null,'a',true);p3Stage(B,'B','Inclusão na AT','a','b');
+  for(let k=0;k<5;k++){const st=SEPST(k,0),w=mk('Separação',k,st.x,st.z,st.ry,k%2);p3Sep(w,k);}   // 5 pessoas na separação, todas perto do fim do braço
+  p3Conv(0);p3Conv(1);p3Ctl();
 }
 const p3Face=(w,x,z)=>turnTo(w,Math.atan2(x-w.g.position.x,z-w.g.position.z));
-async function p3Go(w,role,from,to){                                // vai para a posição do outro braço
-  const s=STAND3(role,to),outside=role==='A'||role==='C',x=w.g.position.x;
-  if(from<0)return;
-  w.status='Indo para o outro braço da mesa';
-  if(outside)await moveAlong(w,[[x,to?3.6:-3.6],[-1.6,to?-3.6:3.6],[-1.6,to?3.6:-3.6],[s.x,s.z+(to?0.5:-0.5)],[s.x,s.z]],2.2);else await moveAlong(w,[[s.x,s.z]],2.2);
+const P3_OUT=a=>SG(a)*3.6;
+async function p3Move(w,kind,k,from,to,x,z){                         // anda até o outro braço (contornando as mesas)
+  w.status='Indo para o outro braço da mesa';const px=w.g.position.x,pz=w.g.position.z;
+  if(kind==='A'){await moveAlong(w,[[px,P3_OUT(from)],[-1.8,P3_OUT(from)],[-1.8,P3_OUT(to)],[px,P3_OUT(to)],[x,z]],2.6);}
+  else if(kind==='B'){await moveAlong(w,[[x,z]],2.4);}
+  else{
+    if(k===1||k===2)await moveAlong(w,[[px,P3_OUT(from)],[8.6,P3_OUT(from)],[8.6,P3_OUT(to)],[x,P3_OUT(to)],[x,z]],2.6);
+    else if(k===0)await moveAlong(w,[[8.5,pz],[8.5,z],[x,z]],2.6);
+    else await moveAlong(w,[[x,z]],2.4);}
 }
 async function p3Induct(w){
   await wait(1);
@@ -2269,18 +2276,18 @@ async function p3Induct(w){
     const us=P3.U.filter(q=>q.g.userData.n>0&&!q.res);if(!us.length){await wait(0.4);continue;}
     const q=us[Math.floor(Math.random()*us.length)];q.res=true;slot.res=true;
     w.status='Retirando o pacote da '+(q.g.userData.kind==='sack'?'saca':'gaylord');
-    await moveAlong(w,[[-3.7,q.z]],2.2);await turnTo(w,-PI/2);w.pose='low';await wait(rnd(0.3,0.5));
+    await moveAlong(w,[[-3.7,q.z]],3.2);await turnTo(w,-PI/2);w.pose='low';await wait(rnd(0.3,0.5));
     q.g.userData.n--;setUnit(q.g);if(q.g.userData.n<=0)(async()=>{await wait(3.5);q.g.userData.n=q.g.userData.max||9;setUnit(q.g);})();q.res=false;
     const p=makePkg(rint(0,5));setCarry(w,p.material);w.status='Colocando na mesa';
-    await moveAlong(w,[[-2.0,slot.z]],2.2);await p3Face(w,slot.x,slot.z);
+    await moveAlong(w,[[-2.0,slot.z]],3.2);await p3Face(w,slot.x,slot.z);
     grpRJP.add(p);p.position.copy(handsWorld(w));setCarry(w,false);w.pose='reach';
     await flyTo(p,slotP(slot.x,slot.z),0.5,0.06);slot.p=p;slot.res=false;w.pose='idle';await wait(rnd(0.1,0.3));
   }
 }
 async function p3Stage(w,role,name,srcKey,dstKey,fromVT){
-  let cur=-1;
+  let cur=0;
   while(true){
-    if(cur!==P3.act){await p3Go(w,role,cur,P3.act);cur=P3.act;}
+    if(cur!==P3.act){const to=P3.act,st=STAND3(role,to);await p3Move(w,role,0,cur,to,st.x,st.z);await turnTo(w,role==='A'?0:PI);if(to)await turnTo(w,role==='A'?PI:0);cur=to;continue;}
     const arm=cur;let src=null;
     if(fromVT)src=P3.VT[arm].find(s=>s.p&&!s.res);else{const s=P3.ARM[arm][srcKey];src=(s.p&&!s.res)?s:null;}
     const dst=P3.ARM[arm][dstKey];
@@ -2294,52 +2301,41 @@ async function p3Stage(w,role,name,srcKey,dstKey,fromVT){
     await flyTo(p,slotP(dst.x,dst.z),0.45,0.05);dst.p=p;dst.res=false;w.pose='idle';await wait(rnd(0.05,0.2));
   }
 }
-async function p3SepMid(w,role,key){                                // funcionários do meio também fazem separação
-  let cur=-1;
-  while(true){
-    if(cur!==P3.act){await p3Go(w,role,cur,P3.act);cur=P3.act;}
-    const s=P3.ARM[cur][key];
-    if(!(s.p&&!s.res)){w.pose='idle';w.status='Aguardando pacote';await wait(0.3);continue;}
-    s.res=true;w.status='Separação: pegando o pacote';await p3Face(w,s.x,s.z);w.pose='reach';await wait(0.3);
-    const p=s.p;s.p=null;s.res=false;grpRJP.remove(p);setCarry(w,p.material);
-    const st=STAND3(role,cur),sg=cur?1:-1;w.status='Separação: saindo para a rota';
-    if(role==='C')await moveAlong(w,[[st.x,st.z+sg*3.2]],2.2);else await moveAlong(w,[[9.6,st.z]],2.2);       // C sai pela lateral, D pela ponta aberta do braço
-    setCarry(w,false);w.pose='idle';await wait(0.4);
-    w.status='Voltando';await moveAlong(w,role==='C'?[[st.x,st.z]]:[[st.x,st.z]],2.6);await wait(rnd(1.5,3));
-  }
-}
-async function p3Conv(arm){                                          // o pacote desliza pelo braço: primeiro quem separa no meio, depois o fim do braço
+async function p3Conv(arm){                                          // o pacote é LEVANTADO por cima das pilhas até o fim do braço (a mesa não é esteira)
   const A=P3.ARM[arm],E=P3.END[arm];
   while(true){
     const b=A.b;
     if(b.p&&!b.res){
-      let tg=[A.c,A.d].find(s=>!s.p&&!s.res)||null,toEnd=false;
-      if(!tg){const e=E.find(s=>s.stack.length<4&&!s.res);if(e){tg=e;toEnd=true;}}
-      if(tg){tg.res=true;b.res=true;const p=b.p,f=p.position.clone(),to=slotP(tg.x,tg.z);if(toEnd)to.y+=tg.stack.length*0.34;b.p=null;
-        await tween(Math.max(0.5,Math.abs(to.x-f.x)/1.5),k=>{p.position.lerpVectors(f,to,k);});
-        if(toEnd){tg.stack.push(p);tg.p=p;}else tg.p=p;tg.res=false;b.res=false;continue;}
+      const cand=E.filter(s=>s.stack.length<4&&!s.res).sort((x,y)=>x.stack.length-y.stack.length||y.x-x.x),tg=cand[0];
+      if(tg){tg.res=true;b.res=true;const p=b.p,f=p.position.clone(),to=slotP(tg.x,tg.z);to.y+=tg.stack.length*0.34;b.p=null;
+        await tween(Math.max(1.5,Math.abs(to.x-f.x)/1.5),k=>{p.position.lerpVectors(f,to,k);p.position.y+=Math.min(1,k/0.15,(1-k)/0.15)*1.7;});
+        tg.stack.push(p);tg.p=p;tg.res=false;b.res=false;continue;}
     }
     await wait(0.25);
   }
 }
-async function p3Sep(w,arm){
-  await wait(3+arm);const z=w.g.position.z;
+async function p3Sep(w,k){                                           // as 5 pessoas da separação acompanham o braço ativo
+  await wait(2+k*1.3);let cur=0;
   while(true){
-    const fl=FPK.find(q=>!q.res&&Math.abs(q.z-z)<1.3);let zz=z;
-    if(fl&&Math.random()<0.35){fl.res=true;zz=fl.z;w.status='Pegando pacote caído no chão';await moveAlong(w,[[fl.x-0.6,fl.z]],2.2);await turnTo(w,PI/2+PI);w.pose='low';await wait(0.7);grpRJP.remove(fl.p);FPK.splice(FPK.indexOf(fl),1);setCarry(w,fl.p.material);}
+    if(cur!==P3.act){const to=P3.act,st=SEPST(k,to);await p3Move(w,'S',k,cur,to,st.x,st.z);await turnTo(w,st.ry);cur=to;continue;}
+    const arm=cur,st=SEPST(k,arm);
+    const fl=FPK.find(q=>!q.res&&Math.abs(q.z-AZ3[arm])<1.4&&q.x>7);let zz=st.z;
+    if(fl&&Math.random()<0.35){fl.res=true;w.status='Pegando pacote caído no chão';await moveAlong(w,[[fl.x-0.7,fl.z]],2.2);await turnTo(w,PI/2);w.pose='low';await wait(0.7);grpRJP.remove(fl.p);FPK.splice(FPK.indexOf(fl),1);setCarry(w,fl.p.material);zz=fl.z;}
     else{
-      const sl=P3.END[arm].find(s=>s.stack.length&&!s.res);
+      const sl=P3.END[arm].filter(s=>s.stack.length&&!s.res).sort((a,b)=>b.stack.length-a.stack.length||Math.abs(a.x-st.x)-Math.abs(b.x-st.x))[0];
       if(!sl){w.pose='idle';w.status='Aguardando pacotes no fim do braço';await wait(0.4);continue;}
-      sl.res=true;w.status='Separação: pegando o pacote';await turnTo(w,-PI/2);w.pose='reach';await wait(0.3);
+      sl.res=true;w.status='Separação: pegando o pacote';await p3Face(w,sl.x,sl.z);w.pose='reach';await wait(0.35);
       const p=sl.stack.pop();sl.p=sl.stack.length?sl.stack[sl.stack.length-1]:null;sl.res=false;grpRJP.remove(p);setCarry(w,p.material);
-      if(sl.stack.length>=3&&Math.random()<0.3)fpkDrop(sl.x+0.3,TBL_Y+0.9,sl.z,rnd(7.55,8.0),sl.z+rnd(-0.8,0.8));
+      if(sl.stack.length>=3&&Math.random()<0.25)fpkDrop(sl.x+0.3,TBL_Y+0.9,sl.z,rnd(7.7,8.2),sl.z+rnd(-0.8,0.8));
     }
-    w.status='Separação: saindo para a rota';await moveAlong(w,[[10.6,zz]],2.2);setCarry(w,false);w.pose='idle';await wait(0.4);
-    w.status='Voltando';await moveAlong(w,[[7.3,z]],2.6);await turnTo(w,-PI/2);await wait(rnd(5,8));
+    w.status='Separação: saindo para a rota';await moveAlong(w,[[8.5,st.z],[10.6,st.z]],2.3);setCarry(w,false);w.pose='idle';await wait(0.4);
+    w.status='Voltando';await moveAlong(w,[[8.5,st.z],[st.x,st.z]],2.6);await turnTo(w,st.ry);await wait(rnd(24,36));
   }
 }
-async function p3Ctl(){                                              // fim do braço cheio: a equipe vai para o outro braço
-  while(true){await wait(0.5);const a=P3.act,full=P3.END[a].every(s=>s.stack.length>=4||s.res),o=1-a,ofull=P3.END[o].every(s=>s.stack.length>=4||s.res);if(full&&!ofull)P3.act=o;}
+async function p3Ctl(){                                              // braço cheio e o outro vazio: a equipe inteira troca de braço
+  const tot=a=>P3.END[a].reduce((n,s)=>n+s.stack.length,0);
+  while(true){await wait(0.6);const a=P3.act,o=1-a;
+    if((tot(a)>=12&&tot(o)<=6)||(tot(a)<=2&&tot(o)>=10)){P3.act=o;P3.sw++;await wait(8);}}
 }
 const MESAS=[-1.5,1.5,4.5],MZ0=3.9,MZ1=9.65,RJM=[[],[],[]],RJP=[],RJD=[],RJF=[],RJCP=[],SORTX=7.7,FEEDX=-3.55,FEEDGX=-5.4,
   NZ=-1.55,MZ=2.25,CX=-6.6,FX=-6.85,STOCK_MAX=4;     // linhas/corredores da paleteira na área de descarga
@@ -2412,16 +2408,16 @@ async function rjFeedLoop(w){
 async function rjPassLoop(w,i,FROM,TO){
   await wait(0.8+i*0.5);const nf=RJM.indexOf(FROM)+1,nt=nf+1,hz=w.home[1],reach=s=>Math.abs(s.z-hz)<=1.25;
   while(true){
-    const full=FROM.filter(s=>s.p&&!s.res&&reach(s)),free=TO.filter(s=>!s.p&&!s.res&&reach(s));
+    const full=FROM.filter(s=>s.p&&!s.res&&reach(s)),free=TO.filter(s=>(s.stack?s.stack.length<4:!s.p)&&!s.res&&reach(s));
     if(!full.length||!free.length){w.pose='idle';w.status=!full.length?'Aguardando pacote na Mesa '+nf:'Mesa '+nt+' cheia';await turnTo(w,-PI/2);await wait(0.4);continue;}
     full.sort((a,b)=>Math.abs(a.z-hz)-Math.abs(b.z-hz));const s=full[0];s.res=true;
-    free.sort((a,b)=>Math.abs(a.z-hz)-Math.abs(b.z-hz));const d=free[0];d.res=true;
+    free.sort((a,b)=>(a.stack?a.stack.length-b.stack.length:0)||Math.abs(a.z-hz)-Math.abs(b.z-hz));const d=free[0];d.res=true;
     w.status='Pegando na Mesa '+nf;await turnTo(w,-PI/2);w.pose='reach';await wait(0.3);
     const p=s.p;s.p=null;s.res=false;grpRJP.remove(p);setCarry(w,p.material);
     w.status=nf===1?'Recebimento: bipando':'Criação de AT: bipando';await wait(0.15);await bip(w);await wait(0.15);
     w.status='Passando para a Mesa '+nt;await turnTo(w,PI/2);
     grpRJP.add(p);p.position.copy(handsWorld(w));setCarry(w,false);w.pose='reach';
-    await flyTo(p,new T.Vector3(d.x,TBL_Y+0.21,d.z),0.3,0.06);d.p=p;d.res=false;w.pose='idle';
+    await flyTo(p,new T.Vector3(d.x,TBL_Y+0.21+(d.stack?d.stack.length*0.34:0),d.z),0.3,0.06);if(d.stack)d.stack.push(p);d.p=p;d.res=false;w.pose='idle';
     await wait(rnd(0.1,0.35));
   }
 }
@@ -2443,7 +2439,6 @@ async function rjSortLoop(w,i,grp){
       const sl=s[Math.floor(Math.random()*s.length)];sl.res=true;zz=sl.z;
       w.status='Pegando o pacote na Mesa 3';await moveAlong(w,[[SORTX,w.g.position.z],[SORTX,sl.z],[tx,sl.z]],2.4);await turnTo(w,-PI/2);w.pose='reach';await wait(0.3);
       const p=sl.p;sl.stack.pop();sl.p=sl.stack.length?sl.stack[sl.stack.length-1]:null;sl.res=false;grpRJP.remove(p);setCarry(w,p.material);
-      (async()=>{await wait(1.8);const k=makePkg(rint(0,5));k.rotation.y=rnd(-0.4,0.4);grpRJP.add(k);k.position.set(sl.x+rnd(-0.04,0.04),TBL_Y+0.21+sl.stack.length*0.34,sl.z+rnd(-0.04,0.04));sl.stack.push(k);sl.p=k;})();   // a Mesa 3 continua acumulada
       if(Math.random()<0.3)fpkDrop(sl.x+0.8,TBL_Y+0.5,sl.z,rnd(5.1,5.7),sl.z+rnd(-0.5,0.5));
     }
     w.status='Saindo com o pacote para a rota';await moveAlong(w,[[SORTX,zz],[SORTX+3.2,zz]],2.4);
@@ -2705,7 +2700,7 @@ function PR_POST3(){
   const fl=new T.Mesh(new T.PlaneGeometry(400,400),new T.MeshStandardMaterial({color:0xcdd5df,roughness:1}));fl.rotation.x=-PI/2;fl.position.set(0,FLOOR+0.025,0);fl.receiveShadow=true;scene.add(fl);scene.background.set(0xcdd5df);
   ['#modes','#b2nd','#bRoof'].forEach(s=>{const e=$(s);if(e)e.style.display='none';});
   scene.children.forEach(o=>{if(o.isLight||o===grpRJ||o===fl||o.isCamera||o===sun.target)return;o.visible=false;});
-  view.target.set(1.4,0,0);view.zoom=view.zoomT=2.9;view.az=view.azT=0.0;view.el=view.elT=1.0;
+  window.__view=view;view.target.set(1.4,0,0);view.zoom=view.zoomT=2.9;view.az=view.azT=0.0;view.el=view.elT=1.0;
 }
 
 setMode('proc');resize();refreshUI();
