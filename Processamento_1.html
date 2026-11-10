@@ -81,7 +81,7 @@ body:not(.ops) .opBtn svg{display:none}body:not(.ops) .opBtn{cursor:default;poin
 
 <div class="top glass">
   <div class="brand opWrap" id="opWrap"><img class="logo" id="logoImg" alt=""><button class="opBtn" id="opBtn" aria-haspopup="true" title="Trocar a operação"><span id="opName">Processamento 1</span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
-    <div class="opMenu" id="opMenu" role="menu"><button data-href="XPT_SP_Jales.html"><span>XPT_SP_Jales</span><small>São Paulo</small></button><button data-href="XPT_RJ_Rio_Penha_02.html"><span>XPT_RJ_Rio_Penha_02</span><small>Rio de Janeiro</small></button><button data-href="Processamento_1.html" class="cur"><span>Processamento 1</span><small>Penha · mesas em sequência</small></button><button data-href="Processamento_2.html"><span>Processamento 2</span><small>Mesa em C · inclusão na AT</small></button><button data-href="Construtor.html"><span>Construtor de operações</span><small>Criar do zero</small></button></div></div>
+    <div class="opMenu" id="opMenu" role="menu"><button data-href="XPT_SP_Jales.html"><span>XPT_SP_Jales</span><small>São Paulo</small></button><button data-href="XPT_RJ_Rio_Penha_02.html"><span>XPT_RJ_Rio_Penha_02</span><small>Rio de Janeiro</small></button><button data-href="Processamento_1.html" class="cur"><span>Processamento 1</span><small>Penha · mesas em sequência</small></button><button data-href="Processamento_2.html"><span>Processamento 2</span><small>Mesa em C · inclusão na AT</small></button><button data-href="Processamento_3.html"><span>Processamento 3</span><small>Mesa vertical · braços alternados</small></button><button data-href="Construtor.html"><span>Construtor de operações</span><small>Criar do zero</small></button></div></div>
   <div class="center">
   <div class="modes" id="modes">
     <button data-m="proc" class="on"><svg class="i" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3.3 7.5L12 12.5l8.7-5M12 22V12.5"/></svg>Processamento</button>
@@ -2496,7 +2496,7 @@ async function rjSortLoop(w,i,grp){
     if(!s.length){w.pose='idle';w.status='Aguardando pacote na Mesa 3';await wait(rnd(0.4,0.9));continue;}
     const sl=s[Math.floor(Math.random()*s.length)];sl.res=true;
     w.status='Pegando o pacote na Mesa 3';await moveAlong(w,[[SORTX,w.g.position.z],[SORTX,sl.z],[tx,sl.z]],2.4);await turnTo(w,-PI/2);w.pose='reach';await wait(0.3);
-    const p=sl.p;sl.p=null;sl.res=false;grpRJP.remove(p);setCarry(w,p.material);
+    const p=sl.p;sl.p=null;sl.res=false;grpRJP.remove(p);setCarry(w,p.material);(async()=>{await wait(1.6);if(!sl.p){const k=makePkg(rint(0,5));grpRJP.add(k);k.position.set(sl.x,TBL_Y+0.21,sl.z);sl.p=k;}})();   // a Mesa 3 continua cheia de pacotes acumulados
     w.status='Saindo com o pacote para a rota';await moveAlong(w,[[SORTX,sl.z],[SORTX+3.2,sl.z]],2.4);
     setCarry(w,false);w.pose='idle';await wait(0.4);                                                     // segue para a rota (fora desta visão)
     w.status='Voltando para a Mesa 3';await moveAlong(w,[[SORTX,sl.z],[SORTX,rnd(4,9)]],2.6);
@@ -2743,6 +2743,8 @@ function PR_POST(){
   grpRJ.children.forEach(o=>{if(o===grpRJP||o===grpRJE)return;if(!inR(o,-3.2,6.2,3.4,10.3,8))o.visible=false;});grpRJP.children.forEach(o=>{if(!inR(o,-7,9,2.5,11,14))o.visible=false;});grpRJE.visible=false;
   ['#modes','#b2nd','#bRoof'].forEach(s=>{const e=$(s);if(e)e.style.display='none';});
   const fl=new T.Mesh(new T.PlaneGeometry(400,400),new T.MeshStandardMaterial({color:0xcdd5df,roughness:1}));fl.rotation.x=-PI/2;fl.position.set(0,FLOOR+0.025,0);fl.receiveShadow=true;scene.add(fl);scene.background.set(0xcdd5df);
+  scene.children.forEach(o=>{if(o.isLight||o===grpRJ||o===fl||o.isCamera||o===sun.target)return;o.visible=false;});
+  RJM[2].forEach(q=>{if(!q.p){const k=makePkg(rint(0,5));grpRJP.add(k);k.position.set(q.x,TBL_Y+0.21,q.z);q.p=k;}});
   view.target.set(1.8,0,6.6);view.zoom=view.zoomT=3.0;view.az=view.azT=0.0;view.el=view.elT=1.0;
 }
 
