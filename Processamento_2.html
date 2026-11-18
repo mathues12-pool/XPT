@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Processamento 2 — Operacional</title><script>window.__PROPX=["sanitary_toilet_wallMounted_a01","sanitary_sink_wallMounted_a01","water_cooler_a01","appliance_refrigerator_a01","sofa_soft_b01","desk_a01","computer_monitor_office_a01","warehouse_computer_keyboard_a01","computer_desktop_tower_a01","computer_printer_office_a01","facilityFurniture_lockerUnit_multiDoor_a01"]</script><script>window.__GENERIC_ENV=1</script>
+<title>Processamento Hawk 2 — Operacional</title><script>window.__PROPX=["sanitary_toilet_wallMounted_a01","sanitary_sink_wallMounted_a01","water_cooler_a01","appliance_refrigerator_a01","sofa_soft_b01","desk_a01","computer_monitor_office_a01","warehouse_computer_keyboard_a01","computer_desktop_tower_a01","computer_printer_office_a01","facilityFurniture_lockerUnit_multiDoor_a01"]</script><script>window.__GENERIC_ENV=1</script>
 <style>
 :root{--bg:#e6eefa;--ink:#14233f;--mut:#6b7a95;--line:#e3eaf6;--pri:#2f6bff;--pri2:#e8f0ff;--glass:rgba(255,255,255,.86)}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -80,8 +80,8 @@ body:not(.ops) .opBtn svg{display:none}body:not(.ops) .opBtn{cursor:default;poin
 <div id="err"><div><h2>Não foi possível carregar o Three.js</h2><p style="margin-top:8px;color:var(--mut)">Esta página precisa de internet para baixar a biblioteca 3D (cdnjs.cloudflare.com).</p></div></div>
 
 <div class="top glass">
-  <div class="brand opWrap" id="opWrap"><img class="logo" id="logoImg" alt=""><button class="opBtn" id="opBtn" aria-haspopup="true" title="Trocar a operação"><span id="opName">Processamento 2</span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
-    <div class="opMenu" id="opMenu" role="menu"><button data-href="XPT_SP_Jales.html"><span>XPT_SP_Jales</span><small>São Paulo</small></button><button data-href="XPT_RJ_Rio_Penha_02.html"><span>XPT_RJ_Rio_Penha_02</span><small>Rio de Janeiro</small></button><button data-href="Processamento_1.html"><span>Processamento 1</span><small>Penha · mesas em sequência</small></button><button data-href="Processamento_2.html" class="cur"><span>Processamento 2</span><small>Mesa em C · inclusão na AT</small></button><button data-href="Processamento_3.html"><span>Processamento 3</span><small>Mesa vertical · braços alternados</small></button><button data-href="Construtor.html"><span>Construtor de operações</span><small>Criar do zero</small></button></div></div>
+  <div class="brand opWrap" id="opWrap"><img class="logo" id="logoImg" alt=""><button class="opBtn" id="opBtn" aria-haspopup="true" title="Trocar a operação"><span id="opName">Processamento Hawk 2</span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="opMenu" id="opMenu" role="menu"><button data-href="XPT_SP_Jales.html"><span>XPT_SP_Jales</span><small>São Paulo</small></button><button data-href="XPT_RJ_Rio_Penha_02.html"><span>XPT_RJ_Rio_Penha_02</span><small>Rio de Janeiro</small></button><button data-href="XPT_SP_Ubatuba.html"><span>XPT_SP_Ubatuba</span><small>São Paulo</small></button><button data-href="Processamento_Padrao.html"><span>Processamento padrão</span><small>Ubatuba · modelo padrão</small></button><button data-href="Processamento_1.html"><span>Processamento Hawk 1</span><small>Penha · mesas em sequência</small></button><button data-href="Processamento_2.html" class="cur"><span>Processamento Hawk 2</span><small>Mesa em C · inclusão na AT</small></button><button data-href="Processamento_3.html"><span>Processamento Hawk 3</span><small>Mesa vertical · braços alternados</small></button><button data-href="Construtor.html"><span>Construtor de operações</span><small>Criar do zero</small></button></div></div>
   <div class="center">
   <div class="modes" id="modes">
     <button data-m="proc" class="on"><svg class="i" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3.3 7.5L12 12.5l8.7-5M12 22V12.5"/></svg>Processamento</button>
@@ -1665,7 +1665,7 @@ async function supXLoop(){
   // paredes internas sobem até o forro quando o teto está ligado (modo caminhada fica fechado)
   [].forEach(s=>{const ext=Math.abs(Math.abs(s.cx)-WX)<0.5||Math.abs(Math.abs(s.cz)-WZ)<0.5;if(ext)return;box(s.w,H-FLOOR,s.d,wallM,s.cx,FLOOR+(H-FLOOR)/2,s.cz,R);});
   box(WX*2+0.7,0.5,0.06,BLACK,0,H-0.6,WZ+0.6,R);
-  const o=textCanvas('Processamento 2 · HAWK',{fs:90,fg:'#ffffff',pad:40,bg:'#ee4d2d',r:24,h:150});
+  const o=textCanvas('Processamento Hawk 2 · HAWK',{fs:90,fg:'#ffffff',pad:40,bg:'#ee4d2d',r:24,h:150});
   const sg=new T.Mesh(new T.PlaneGeometry(14,14*o.h/o.w),new T.MeshBasicMaterial({map:o.tex,toneMapped:false}));sg.position.set(0,H-1.9,WZ+0.6);R.add(sg);
   const roofTop=surf(TX.conc,{color:0xdfe3e8,rx:16,ry:6,rough:0.92,bump:0.45}),side=M(0xbfc5ce),ceil=new T.MeshBasicMaterial({map:mkTex(TX.ceil,9,3)});
   const slab=new T.Mesh(G(WX*2+1.2,0.45,WZ*2+1.2),[side,side,roofTop,ceil,side,side]);
