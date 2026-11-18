@@ -81,7 +81,7 @@ body:not(.ops) .opBtn svg{display:none}body:not(.ops) .opBtn{cursor:default;poin
 
 <div class="top glass">
   <div class="brand opWrap" id="opWrap"><img class="logo" id="logoImg" alt=""><button class="opBtn" id="opBtn" aria-haspopup="true" title="Trocar a operação"><span id="opName">XPT_SP_Ubatuba</span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
-    <div class="opMenu" id="opMenu" role="menu"><button data-href="XPT_SP_Jales.html"><span>XPT_SP_Jales</span><small>São Paulo</small></button><button data-href="XPT_RJ_Rio_Penha_02.html"><span>XPT_RJ_Rio_Penha_02</span><small>Rio de Janeiro</small></button><button data-href="XPT_SP_Ubatuba.html" class="cur"><span>XPT_SP_Ubatuba</span><small>São Paulo</small></button><button data-href="Processamento_1.html"><span>Processamento 1</span><small>Penha · mesas em sequência</small></button><button data-href="Processamento_2.html"><span>Processamento 2</span><small>Mesa em C · inclusão na AT</small></button><button data-href="Processamento_3.html"><span>Processamento 3</span><small>Mesa vertical · braços alternados</small></button><button data-href="Construtor.html"><span>Construtor de operações</span><small>Criar do zero</small></button></div></div>
+    <div class="opMenu" id="opMenu" role="menu"><button data-href="XPT_SP_Jales.html"><span>XPT_SP_Jales</span><small>São Paulo</small></button><button data-href="XPT_RJ_Rio_Penha_02.html"><span>XPT_RJ_Rio_Penha_02</span><small>Rio de Janeiro</small></button><button data-href="XPT_SP_Ubatuba.html" class="cur"><span>XPT_SP_Ubatuba</span><small>São Paulo</small></button><button data-href="Processamento_Padrao.html"><span>Processamento padrão</span><small>Ubatuba · modelo padrão</small></button><button data-href="Processamento_1.html"><span>Processamento Hawk 1</span><small>Penha · mesas em sequência</small></button><button data-href="Processamento_2.html"><span>Processamento Hawk 2</span><small>Mesa em C · inclusão na AT</small></button><button data-href="Processamento_3.html"><span>Processamento Hawk 3</span><small>Mesa vertical · braços alternados</small></button><button data-href="Construtor.html"><span>Construtor de operações</span><small>Criar do zero</small></button></div></div>
   <div class="center">
   <div class="modes" id="modes">
     <button data-m="proc" class="on"><svg class="i" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3.3 7.5L12 12.5l8.7-5M12 22V12.5"/></svg>Processamento</button>
@@ -2261,6 +2261,7 @@ function ubPlate(x,z,wall){                                         // placa lar
   const b=box(0.8,0.3,0.03,0xf26a2e,0,0,0,g,{noCast:true});b.rotation.x=-0.55;RJ.add(g);
 }
 function buildRJ0(){
+  const PD=!!window.__UBPD;UB.PD=PD;
   const GA=[-9.4,-3.1],GB=[-2.2,4.1];                                  // portão duplo: duas aberturas, como no desenho
   rjWall(-WX,-WZ,WX,-WZ);rjWall(-WX,WZ,WX,WZ);rjWall(WX,-WZ,WX,WZ);rjWall(-WX,-WZ,-WX,GA[0]);rjWall(-WX,GA[1],-WX,GB[0]);rjWall(-WX,GB[1],-WX,WZ);
   [GA,GB].forEach(G0=>{const zc=(G0[0]+G0[1])/2,W=G0[1]-G0[0],g=new T.Group();g.position.set(-WX,0,zc);RJ.add(g);
@@ -2270,7 +2271,7 @@ function buildRJ0(){
     const door=new T.Group();door.position.set(0,FLOOR+4.0,0);g.add(door);for(let i=0;i<9;i++)box(0.16,0.44,W-0.3,i%2?0xd9e1ef:0xe7edf8,0,-0.22-i*0.44,0,door,{noCast:true});
     door.scale.y=0.08;});
   /* ---------- caminhão parado de ré ---------- */
-  const tr=makeTruck();grpRJP.add(tr.g);tr.g.position.set(-23.5,0,0.95);tr.g.rotation.y=-PI/2;RJTR=tr;
+  if(!PD){const tr=makeTruck();grpRJP.add(tr.g);tr.g.position.set(-23.5,0,0.95);tr.g.rotation.y=-PI/2;RJTR=tr;}
   /* ---------- insumos: gaylords desmontadas, pallets enviados e sacas ---------- */
   (function(){const a=UX(100),b=UX(420),c=UZ(32)-1.0,d=UZ(130)-1.0,I=new T.Group();RJ.add(I);
     ubFrame((a+b)/2,(c+d)/2,b-a,d-c,0x9fb4d6,RJ);ubLabel('INSUMOS',(a+b)/2,d-0.5,3.6,'#7d8ca8',0,RJ);
@@ -2322,7 +2323,7 @@ function buildRJ0(){
   /* ---------- mesa de processamento (fluxo da direita para a esquerda) ---------- */
   table(18.4,30.2,-1.3,1.3,RJ);ubLabel('MESA DE PROCESSAMENTO',24.3,-2.2,5.2,'#8a97ae',0,RJ);
   UB.FEED={x:29.6,z:0.8,p:null,res:false};UB.MID={x:27.7,z:0.8,p:null,res:false};
-  for(let i=0;i<8;i++){const s={x:25.6-i*0.9,z:0.8,stack:[],p:null,res:false,col:i};const n=rint(2,4);
+  for(let i=0;i<8;i++){const s={x:25.6-i*0.9,z:0.8,stack:[],p:null,res:false,col:i};const n=i>=4?(i===7?3:4):rint(1,3);
     for(let k=0;k<n;k++){const q=makePkg(rint(0,5));q.rotation.y=rnd(-0.4,0.4);grpRJP.add(q);q.position.set(s.x+rnd(-0.05,0.05),TBL_Y+0.21+k*0.34,s.z+rnd(-0.05,0.05));s.stack.push(q);}s.p=s.stack[s.stack.length-1];UB.ACC.push(s);}
   /* ---------- sacas abertas ao redor da mesa: quem separa enche a saca e leva cheia até a rota ---------- */
   UB.SACKS=[];
@@ -2369,9 +2370,9 @@ function buildRJ0(){
   giveScanner(b1,29.2,1.05,0);giveScanner(b2,26.2,1.05,0);ubBip1(b1);ubBip2(b2);
   [[13.8,-4.0,'top',1],[15.8,-2.4,'cen',1],[16.2,0.0,'cen',1],[14.6,3.0,'bot',1]].forEach(([x,z,grp,f],i)=>{const w=mk('Separação',i,x,z,PI/2,f);ubSep(w,i,grp);});
   /* descarga: elétrica dentro da carreta puxa a carga; manual leva até as áreas de carga descarregada */
-  {const J=makeJack('PM-02',0xf5b82e,{name:'Igor',vest:0xff8a3d,skin:SKIN[0]},1.15);const tz=RJTR.g.position.z;
+  if(!PD){const J=makeJack('PM-02',0xf5b82e,{name:'Igor',vest:0xff8a3d,skin:SKIN[0]},1.15);const tz=RJTR.g.position.z;
     J.g.position.set(RJEDGE()+0.3,0.6,tz-0.65);J.g.rotation.y=-PI/2;regActor(J,'Igor','rjp');J.status='Dentro da carreta';rjTruckLoop(J);}
-  {const J=makeHandJack('PM-01',{name:'Wagner',vest:0xff8a3d,skin:SKIN[2]});J.g.position.set(RJEDGE()+4.5,FLOOR,-3.3);J.g.rotation.y=PI/2;regActor(J,'Wagner','rjp');J.status='Aguardando';ubCarry(J);}
+  if(!PD){const J=makeHandJack('PM-01',{name:'Wagner',vest:0xff8a3d,skin:SKIN[2]});J.g.position.set(RJEDGE()+4.5,FLOOR,-3.3);J.g.rotation.y=PI/2;regActor(J,'Wagner','rjp');J.status='Aguardando';ubCarry(J);}
 }
 /* ---------- loops de Ubatuba ---------- */
 const UTOP=-3.3,UBOT=3.2;
@@ -2409,7 +2410,7 @@ async function ubFeed(w){                                           // estrela: 
     w.status='Pegando o pacote na '+(s.g.userData.kind==='sack'?'saca':'gaylord');
     await moveAlong(w,[[30.9,0.5],[29.9,s.z]],2.4);await turnTo(w,PI/2);w.pose='low';await wait(rnd(0.3,0.5));
     s.g.userData.n--;setUnit(s.g);const p=makePkg(rint(0,5));setCarry(w,p.material);
-    if(s.g.userData.n<=0){const u=s.g;s.g=null;(async()=>{await wait(2);await tween(0.9,k=>{u.scale.y=1-0.95*k;});u.parent&&u.parent.remove(u);})();}
+    if(s.g.userData.n<=0){const u=s.g;s.g=null;if(UB.PD){const sl=s;(async()=>{await wait(3.5);const g=makeGaylord(rint(12,16));grpRJP.add(g);g.position.set(sl.x,FLOOR,sl.z);sl.g=g;})();}(async()=>{await wait(2);await tween(0.9,k=>{u.scale.y=1-0.95*k;});u.parent&&u.parent.remove(u);})();}
     s.res=false;
     w.status='Abastecendo a mesa';await moveAlong(w,[[31.0,0.5]],2.4);await turnTo(w,-PI/2);
     grpRJP.add(p);p.position.copy(handsWorld(w));setCarry(w,false);w.pose='reach';
@@ -2456,7 +2457,7 @@ async function ubSep(w,i,grp){                                      // separaç�
     if(!free.length){w.pose='idle';w.status='Aguardando uma saca livre';await wait(0.6);continue;}
     const sk=free[0];sk.res=true;
     while(sk.n<10){
-      const piles=UB.ACC.filter(s=>s.stack.length&&!s.res).sort((a,b)=>b.stack.length-a.stack.length||(Math.random()-0.5));
+      const piles=UB.ACC.filter(s=>s.stack.length&&!s.res).sort((a,b)=>a.x-b.x);
       if(!piles.length){w.pose='idle';w.status='Aguardando pacotes na mesa';await wait(0.5);continue;}
       const col=piles[Math.min(piles.length-1,Math.floor(Math.random()*Math.min(3,piles.length)))];col.res=true;
       w.status='Pegando o pacote na mesa';
@@ -2468,7 +2469,7 @@ async function ubSep(w,i,grp){                                      // separaç�
       if(sk.side==='B'&&sk.n<10){}  /* já está na linha da mesa */
     }
     /* saca cheia: leva até a rota */
-    const g0=UPREF[grp],G=g0[Math.random()<0.6?0:rint(1,g0.length-1)],cand=UB.CELLS.filter(c=>c.grp===G),pl=cand[Math.floor(Math.random()*cand.length)];
+    const g0=UPREF[grp],G=g0[Math.random()<0.6?0:rint(1,g0.length-1)],cand0=UB.CELLS.filter(c=>c.grp===G&&!c.hide),cand=cand0.length?cand0:UB.CELLS.filter(c=>!c.hide),pl=cand[Math.floor(Math.random()*cand.length)];
     w.status='Levando a saca cheia para a rota';
     w.pose='low';await wait(0.4);sk.g.visible=false;carrySack(w,true);
     const sz=pl.sz,sx=pl.sx;let path;
@@ -2496,6 +2497,20 @@ async function ubSep(w,i,grp){                                      // separaç�
 }
 function UB_POST(){window.__view=view;window.UB=UB;window.__actors=actors;scene.children.forEach(o=>{if(o.isMesh&&o.geometry&&o.geometry.type==='PlaneGeometry'&&o.geometry.parameters&&Math.abs(o.geometry.parameters.width-WX*2)<0.1&&Math.abs(o.geometry.parameters.height-WZ*2)<0.1)o.material=new T.MeshStandardMaterial({color:0xc6cbd3,roughness:0.92,metalness:0});});
   ['#modes'].forEach(s=>{const e=$(s);if(e)e.style.display='none';});
+}
+
+function PD_POST(){                                                  // Processamento padrão: só a mesa, a área de indução e as pessoas, sobre piso liso
+  window.__view=view;window.UB=UB;window.__actors=actors;
+  city.visible=false;
+  const keep=o=>{const a=o.userData&&o.userData.actor;if(a)return a.type==='worker';
+    const b=new T.Box3().setFromObject(o);if(b.isEmpty())return true;const c=b.getCenter(new T.Vector3()),z=b.getSize(new T.Vector3());
+    if(c.x<12.5)return false;if(Math.max(z.x,z.z)>12&&Math.min(z.x,z.z)<0.6)return false;if(b.min.y>1.1&&z.y>0.12&&Math.max(z.x,z.z)<1.2)return false;return true;};
+  grpRJ.children.forEach(o=>{if(o===grpRJP||o===grpRJE)return;if(!keep(o))o.visible=false;});grpRJP.children.forEach(o=>{if(!keep(o))o.visible=false;});grpRJE.visible=false;
+  UB.CELLS.forEach(c=>{c.hide=!c.g.visible;});
+  ['#modes','#b2nd','#bRoof'].forEach(q=>{const e=$(q);if(e)e.style.display='none';});
+  const fl=new T.Mesh(new T.PlaneGeometry(400,400),new T.MeshStandardMaterial({color:0xc6cbd3,roughness:0.92}));fl.rotation.x=-PI/2;fl.position.set(0,FLOOR+0.025,0);fl.receiveShadow=true;scene.add(fl);scene.background.set(0xc6cbd3);
+  scene.children.forEach(o=>{if(o.isLight||o===grpRJ||o===fl||o.isCamera||o===sun.target)return;o.visible=false;});
+  view.target.set(25.5,0,0.5);view.zoom=view.zoomT=2.5;view.az=view.azT=0.0;view.el=view.elT=1.0;
 }
 const MESAS=[],MZ0=3.9,MZ1=9.65,RJM=[[],[],[]],RJP=[],RJD=[],RJF=[],RJCP=[],SORTX=7.7,FEEDX=-3.55,FEEDGX=-5.4,
   NZ=-1.55,MZ=2.25,CX=-6.6,FX=-6.85,STOCK_MAX=4;     // linhas/corredores da paleteira na área de descarga
