@@ -2238,7 +2238,7 @@ function ubCells(x1,x2,y1,y2,n,vertical,face,kinds,grp,gaiIdx){
   const a=UX(x1),b=UX(x2),c=UZ(y1),d=UZ(y2);
   for(let i=0;i<n;i++){
     const cw=vertical?(b-a):(b-a)/n,cd=vertical?(d-c)/n:(d-c),cx=vertical?(a+b)/2:a+cw*(i+0.5),cz=vertical?c+cd*(i+0.5):(c+d)/2;
-    frame(cx,cz,cw-0.2,cd-0.2,0x9fb4d6,RJ);
+    ubFrame(cx,cz,cw-0.2,cd-0.2,0x9fb4d6,RJ);
     let kind=Array.isArray(kinds)?kinds[i%kinds.length]:kinds;if(gaiIdx&&gaiIdx.includes(i))kind='gai';
     const g=kind==='pal'?makeRoutePallet():kind==='gai'?makeRouteGaiola():makeRouteGL();g.position.set(cx,FLOOR,cz);RJ.add(g);
     const pl={x:cx,z:cz,g,n:0,kind,grp,box:[],zone:face};
@@ -2251,6 +2251,9 @@ function ubCells(x1,x2,y1,y2,n,vertical,face,kinds,grp,gaiIdx){
 function ubStackPile(x,z,n,w,d,h,cols,par){                       // pilha de chapas/pallets
   for(let k=0;k<n;k++){const b=box(w,h,d,pick(cols),x+rnd(-0.04,0.04),FLOOR+h/2+k*(h+0.005),z+rnd(-0.04,0.04),par);b.rotation.y=rnd(-0.08,0.08);}
 }
+const ubFrame=()=>{};
+const ubLabel=(t,x,z,wid,col,rot,par)=>floorText(t,x,z,Math.max(1.4,t.length*0.32),'#8593ab',rot||0,RJ);
+function ubSackHeap(x,z,par){[3,2,1].forEach((n,L)=>{for(let i=0;i<n;i++){const q=makeSack();q.scale.setScalar(0.6);q.rotation.z=PI/2;q.rotation.y=rnd(-0.12,0.12);q.position.set(x+0.35+rnd(-0.04,0.04),FLOOR+0.21+L*0.37,z+(i-(n-1)/2)*0.46+rnd(-0.03,0.03));par.add(q);}});}
 let UBRN=0;
 function ubPlate(x,z,wall){                                         // placa laranja lisa (igual à das gaiolas) na parede, acima da rota
   const g=new T.Group();const y=FLOOR+1.12;
@@ -2270,7 +2273,7 @@ function buildRJ0(){
   const tr=makeTruck();grpRJP.add(tr.g);tr.g.position.set(-23.5,0,0.95);tr.g.rotation.y=-PI/2;RJTR=tr;
   /* ---------- insumos: gaylords desmontadas, pallets enviados e sacas ---------- */
   (function(){const a=UX(100),b=UX(420),c=UZ(32)-1.0,d=UZ(130)-1.0,I=new T.Group();RJ.add(I);
-    frame((a+b)/2,(c+d)/2,b-a,d-c,0x9fb4d6,RJ);floorText('INSUMOS',(a+b)/2,d-0.5,3.6,'#7d8ca8',0,RJ);
+    ubFrame((a+b)/2,(c+d)/2,b-a,d-c,0x9fb4d6,RJ);ubLabel('INSUMOS',(a+b)/2,d-0.5,3.6,'#7d8ca8',0,RJ);
     const card=[0xc4935c,0xb98a55,0xcc9d66],wood=[0xc99f68,0xb98a55,0xd0a770],sackc=[0xf1eee6,0xe9e5da,0xf6f4ee];
     for(let i=0;i<5;i++)ubStackPile(a+1.4+i*1.9,c+1.2,rint(14,26),1.3,1.18,0.045,card,I);                    // gaylords desmontadas (chapas)
     for(let i=0;i<3;i++)ubStackPile(a+1.4+i*1.9,c+3.0,rint(14,22),1.3,1.18,0.045,card,I);
@@ -2280,43 +2283,43 @@ function buildRJ0(){
       for(let k=0;k<n;k++){const p=makeRoutePallet();p.position.set(px+rnd(-0.03,0.03),FLOOR+k*0.15,pz+rnd(-0.03,0.03));p.rotation.y=rnd(-0.03,0.03);I.add(p);}}
   })();
   /* ---------- rotas encostadas na parede, como em Penha, todas em pallet ---------- */
-  const rowP=(x1,x2,z,face,grp)=>{const n=Math.floor((x2-x1)/3.5);frame((x1+x2)/2,z,x2-x1,1.5,0x9fb4d6,RJ);
+  const rowP=(x1,x2,z,face,grp)=>{const n=Math.floor((x2-x1)/3.5);ubFrame((x1+x2)/2,z,x2-x1,1.5,0x9fb4d6,RJ);
     for(let i=0;i<n;i++){const xc=x1+(i+0.5)*(x2-x1)/n;ubPlate(xc,z,face==='S'?'N':'S');
       [-0.66,0.66].forEach(d=>{const x=xc+d,g=makeRoutePallet();g.position.set(x,FLOOR,z);RJ.add(g);
         const pl={x,z,g,n:0,kind:'pal',grp,box:[],sx:x,sz:face==='S'?z+1.25:z-1.3,h:face==='S'?PI:0};for(let k=rint(0,7);k>0;k--)palletAdd(pl);RJP.push(pl);UB.CELLS.push(pl);});}};
   rowP(-11.0,-1.4,-WZ+0.95,'S','top');rowP(5.4,32.8,-WZ+0.95,'S','top');                         // parede norte
-  (function(){const a=-0.8,b=5.3,cx=(a+b)/2,cz=-WZ+0.95;frame(cx,cz,b-a,1.5,0x9fb4d6,RJ);floorText('DEVOLUÇÕES',cx,cz+1.0,3.4,'#c98e00',0,RJ);
+  (function(){const a=-0.8,b=5.3,cx=(a+b)/2,cz=-WZ+0.95;ubFrame(cx,cz,b-a,1.5,0x9fb4d6,RJ);ubLabel('DEVOLUÇÕES',cx,cz+1.0,3.4,'#c98e00',0,RJ);
     ubPlate(cx,0,'N');const g=makeRoutePallet();g.position.set(cx,FLOOR,cz);RJ.add(g);const pl={x:cx,z:cz,g,n:0,kind:'pal',grp:'dev',box:[],sx:cx,sz:cz+1.25,h:PI};for(let k=rint(2,6);k>0;k--)palletAdd(pl);RJP.push(pl);UB.CELLS.push(pl);
     [-1,1].forEach(q=>{const u=makeGaylord(rint(6,10));RJ.add(u);u.position.set(cx+q*1.9,FLOOR,cz);});})();
   rowP(-9.6,31.9,WZ-0.95,'N','bottom');                                                           // parede sul
-  (function(){const n=4,z0=-8.6,z1=8.2;frame(WX-0.95,(z0+z1)/2,1.5,z1-z0,0x9fb4d6,RJ);                                // parede leste
+  (function(){const n=4,z0=-8.6,z1=8.2;ubFrame(WX-0.95,(z0+z1)/2,1.5,z1-z0,0x9fb4d6,RJ);                                // parede leste
     for(let i=0;i<n;i++){const zc=z0+(i+0.5)*(z1-z0)/n;ubPlate(0,zc,'E');
       [-0.66,0.66].forEach(d=>{const z=zc+d,g=makeRoutePallet();g.position.set(WX-0.95,FLOOR,z);RJ.add(g);
         const pl={x:WX-0.95,z,g,n:0,kind:'pal',grp:'right',box:[],sx:WX-2.3,sz:z,h:PI/2};for(let k=rint(0,7);k>0;k--)palletAdd(pl);RJP.push(pl);UB.CELLS.push(pl);});}})();
-  frame(-1.9,0,19.6,3.2,0x9fb4d6,RJ);                                                              // bloco entre o caminhão e a mesa: duas filas costa com costa
+  ubFrame(-1.9,0,19.6,3.2,0x9fb4d6,RJ);                                                              // bloco entre o caminhão e a mesa: duas filas costa com costa
   [[-0.78,'N','cenT'],[0.78,'S','cenB']].forEach(([z,face,grp])=>{const x1=-11.7,x2=7.9,n=Math.floor((x2-x1)/3.5);
     for(let i=0;i<n;i++){const xc=x1+(i+0.5)*(x2-x1)/n;
       [-0.66,0.66].forEach(d=>{const x=xc+d,g=makeRoutePallet();g.position.set(x,FLOOR,z);RJ.add(g);
         const pl={x,z,g,n:0,kind:'pal',grp,box:[],sx:x,sz:face==='S'?z+1.35:z-1.35,h:face==='S'?PI:0};for(let k=rint(0,7);k>0;k--)palletAdd(pl);RJP.push(pl);UB.CELLS.push(pl);});}});
   [-1,1].forEach(sg=>{                                                                            // cantos da parede leste: rotas em L
     const z0=sg*(WZ-0.95),zi=sg*8.75,mkP=(x,z,grp,sx,sz,h)=>{const g=makeRoutePallet();g.position.set(x,FLOOR,z);RJ.add(g);const pl={x,z,g,n:0,kind:'pal',grp,box:[],sx,sz,h};for(let k=rint(0,7);k>0;k--)palletAdd(pl);RJP.push(pl);UB.CELLS.push(pl);};
-    frame(34.1,z0,2.7,1.5,0x9fb4d6,RJ);ubPlate(34.1,0,sg<0?'N':'S');
+    ubFrame(34.1,z0,2.7,1.5,0x9fb4d6,RJ);ubPlate(34.1,0,sg<0?'N':'S');
     [33.45,34.75].forEach(x=>mkP(x,z0,sg<0?'top':'bottom',x,sg<0?z0+1.25:z0-1.3,sg<0?PI:0));       // ao longo da parede norte/sul
-    frame(WX-0.95,(z0+zi)/2,1.5,Math.abs(z0-zi)+1.5,0x9fb4d6,RJ);ubPlate(0,(z0+zi)/2,'E');
+    ubFrame(WX-0.95,(z0+zi)/2,1.5,Math.abs(z0-zi)+1.5,0x9fb4d6,RJ);ubPlate(0,(z0+zi)/2,'E');
     [z0,zi].forEach(z=>mkP(WX-0.95,z,'right',34.7,(z0+zi)/2,PI/2));                                  // ao longo da parede leste
   });
   /* ---------- gaiolas (4) perto da mesa ---------- */
   [[930,990,95,130,'T'],[995,1050,95,130,'T'],[930,985,303,340,'B'],[995,1050,303,340,'B']].forEach(([x1,x2,y1,y2,s])=>{
-    const a=UX(x1),b=UX(x2),c=UZ(y1),d=UZ(y2),cx=(a+b)/2,cz=(c+d)/2;frame(cx,cz,b-a-0.2,d-c-0.2,0x9fb4d6,RJ);
+    const a=UX(x1),b=UX(x2),c=UZ(y1),d=UZ(y2),cx=(a+b)/2,cz=(c+d)/2;ubFrame(cx,cz,b-a-0.2,d-c-0.2,0x9fb4d6,RJ);
     const g=makeRouteGaiola();g.position.set(cx,FLOOR,cz);if(s==='B')g.rotation.y=PI;RJ.add(g);const pl={x:cx,z:cz,g,n:0,kind:'gai',grp:s==='T'?'gaiT':'gaiB',box:[],sx:cx,sz:s==='T'?d+0.5:c-0.5,h:s==='T'?PI:0};
     for(let k=rint(3,9);k>0;k--)palletAdd(pl);RJP.push(pl);UB.CELLS.push(pl);});
   /* ---------- carga descarregada (2 áreas ao lado da mesa) ---------- */
-  floorText('CARGA DESCARREGADA',33.9,-4.3,3.0,'#7d8ca8',PI/2,RJ);floorText('CARGA DESCARREGADA',33.9,3.6,3.0,'#7d8ca8',PI/2,RJ);
-  [[UX(1195),UX(1240),UZ(95),UZ(185)],[UX(1197),UX(1240),UZ(255),UZ(355)]].forEach(([a,b,c,d])=>frame((a+b)/2,(c+d)/2,b-a-0.1,d-c-0.1,0x9fb4d6,RJ));
-  [[31.7,-5.4,'T'],[31.7,-3.3,'T'],[31.7,2.5,'B'],[31.7,4.7,'B']].forEach(([x,z,row],i)=>UB.CG.push({x,z,row,g:null,res:false}));
-  [0,1,2].forEach(i=>{const s=UB.CG[i],sk=i===1;s.g=sk?makeSackPallet(rint(10,16)):makeGaylord(rint(10,16));grpRJP.add(s.g);s.g.position.set(s.x,FLOOR,s.z);});
+  ubLabel('ÁREA DE INDUÇÃO',33.9,-4.3,3.0,'#7d8ca8',PI/2,RJ);ubLabel('ÁREA DE INDUÇÃO',33.9,3.6,3.0,'#7d8ca8',PI/2,RJ);[[32.7,-5.5],[32.7,-3.6],[32.7,2.7],[32.7,4.5]].forEach(([x,z])=>ubSackHeap(x,z,grpRJP));
+  [[UX(1195),UX(1240),UZ(95),UZ(185)],[UX(1197),UX(1240),UZ(255),UZ(355)]].forEach(([a,b,c,d])=>ubFrame((a+b)/2,(c+d)/2,b-a-0.1,d-c-0.1,0x9fb4d6,RJ));
+  [[31.2,-5.4,'T'],[31.2,-3.3,'T'],[31.2,2.5,'B'],[31.2,4.7,'B']].forEach(([x,z,row],i)=>UB.CG.push({x,z,row,g:null,res:false}));
+  [0,2].forEach(i=>{const s=UB.CG[i];s.g=makeGaylord(rint(12,16));grpRJP.add(s.g);s.g.position.set(s.x,FLOOR,s.z);});
   /* ---------- mesa de processamento (fluxo da direita para a esquerda) ---------- */
-  table(13.0,30.2,-1.3,1.3,RJ);floorText('MESA DE PROCESSAMENTO',21.6,-2.2,5.2,'#8a97ae',0,RJ);
+  table(13.0,30.2,-1.3,1.3,RJ);ubLabel('MESA DE PROCESSAMENTO',21.6,-2.2,5.2,'#8a97ae',0,RJ);
   UB.FEED={x:29.6,z:0.8,p:null,res:false};UB.MID={x:27.7,z:0.8,p:null,res:false};
   for(let i=0;i<12;i++){const s={x:25.6-i*0.9,z:0.8,stack:[],p:null,res:false,col:i};const n=rint(2,4);
     for(let k=0;k<n;k++){const q=makePkg(rint(0,5));q.rotation.y=rnd(-0.4,0.4);grpRJP.add(q);q.position.set(s.x+rnd(-0.05,0.05),TBL_Y+0.21+k*0.34,s.z+rnd(-0.05,0.05));s.stack.push(q);}s.p=s.stack[s.stack.length-1];UB.ACC.push(s);}
@@ -2353,13 +2356,13 @@ function buildRJ0(){
     box(xb-xa-0.3,0.012,z2r-z1r-0.3,0xf1eadf,(xa+xb)/2,FLOOR+0.012,(z1r+z2r)/2,RJ,{noCast:true});
     const cx=(xa+xb)/2,cz=(z1r+z2r)/2;
     box(0.8,1.9,0.7,0xe9edf3,xa+0.6,FLOOR+0.95,z2r-0.6,RJ);box(2.0,0.9,0.6,0xdfe6f1,xa+2.0,FLOOR+0.45,z2r-0.45,RJ);box(0.62,0.36,0.42,0xe9edf3,xa+1.7,FLOOR+1.08,z2r-0.45,RJ);
-    floorText('COPA',cx,z1r+0.8,1.4,'#a58a6a',0,RJ);})();
+    ubLabel('COPA',cx,z1r+0.8,1.4,'#a58a6a',0,RJ);})();
   [UX(300),UX(385)].forEach(x=>{const z=UZ(390),n0=RJ.children.length;box(1.8,0.07,0.9,0xf3f6fb,x,FLOOR+0.78,z,RJ);[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>box(0.06,0.76,0.06,0x7f8da8,x+a*0.82,FLOOR+0.38,z+b*0.38,RJ));
     box(0.6,0.38,0.04,0x111827,x,FLOOR+1.1,z-0.2,RJ);box(0.1,0.18,0.1,0x2c3340,x,FLOOR+0.9,z-0.2,RJ);box(0.5,0.08,0.5,0x1f2937,x,FLOOR+0.5,z+0.8,RJ);box(0.5,0.55,0.08,0x1f2937,x,FLOOR+0.8,z+1.05,RJ);});
-  floorText('ESCRITÓRIO',UX(380),UZ(425),2.4,'#a58a6a',0,RJ);
+  ubLabel('ESCRITÓRIO',UX(380),UZ(425),2.4,'#a58a6a',0,RJ);
   /* ---------- pessoas ---------- */
   const mk=(role,i,x,z,ry,f,o)=>{const w=makeWorker('F',role,Object.assign({skin:SKIN[i%4],female:!!f},o||{}));regActor(w,'F','rjp');w.g.position.set(x,FLOOR,z);w.g.rotation.y=ry;w.home=[x,z];w.status=role;return w;};
-  const ger=mk('Gerente do galpão',0,23.9,-4.5,PI,1,{keepVest:true,vest:0xf4f4f4,noStripe:true});ubManager(ger);
+  const ger=mk('Gerente do galpão',0,28.0,-3.9,PI/2,1,{keepVest:true,vest:0xf4f4f4,noStripe:true});ubManager(ger);
   const star=mk('Abastecimento da mesa',1,31.0,0.5,-PI/2,0);ubFeed(star);
   const b1=mk('Bipagem 1',2,29.2,2.0,PI,1),b2=mk('Bipagem 2',3,26.2,2.0,PI,1);
   giveScanner(b1,29.2,1.05,0);giveScanner(b2,26.2,1.05,0);ubBip1(b1);ubBip2(b2);
@@ -2383,18 +2386,18 @@ async function ubCarry(J){                                          // paleteira
     await liftTo(J,0);jackLoad(J,g);T0.edge=null;await liftTo(J,0.1);
     J.status='Levando a carga para perto da mesa';
     const top=dst.row==='T',cz=top?UTOP:UBOT;
-    const pts=top?[[-13.3,UTOP],[8.5,UTOP],[29.5,UTOP],[dst.x-J.off-0.2,dst.z]]:[[-13.3,UBOT],[8.5,UBOT],[22.8,UBOT],[24.0,4.7],[dst.x-J.off-0.2,dst.z]];
+    const pts=top?[[-12.2,-3.0],[-12.2,-7.4],[29.4,-7.4],[dst.x-J.off-0.2,dst.z]]:[[-12.2,3.0],[-12.2,6.4],[29.4,6.4],[dst.x-J.off-0.2,dst.z]];
     await moveAlong(J,pts,2.4);await turnTo(J,PI/2);
     await moveAlong(J,[[dst.x-J.off,dst.z]],1.0);
     await liftTo(J,0);dst.g=jackDrop(J,grpRJP,dst.x,FLOOR,dst.z);dst.g.userData.n=Math.min(dst.g.userData.n||12,16);setUnit(dst.g);dst.res=false;
     await moveAlong(J,[[dst.x-J.off-1.8,dst.z]],1.2,{back:true});
     J.status='Voltando para a carreta';
-    await moveAlong(J,top?[[29.5,UTOP],[8.5,UTOP],[-12.0,UTOP]]:[[23.0,UBOT],[8.5,UBOT],[-12.0,UBOT]],2.6);
+    await moveAlong(J,top?[[29.4,-7.4],[-12.2,-7.4],[-12.2,-3.0]]:[[29.4,6.4],[-12.2,6.4],[-12.2,3.0]],2.6);
   }
 }
-async function ubManager(w){                                        // gerente circula ao redor da mesa, olhando o processo
-  const P=[[23.9,-4.5,PI],[27.5,-3.4,PI],[17.5,-3.4,PI],[12.2,-3.0,PI/2],[20.5,-3.4,PI]];let i=0;
-  while(true){w.status='Acompanhando o processamento';w.pose='tablet';await wait(rnd(4,8));i=(i+1)%P.length;w.pose='idle';await moveAlong(w,[[P[i][0],P[i][1]]],1.4);await turnTo(w,P[i][2]);}
+async function ubManager(w){                                        // gerente circula pelo canto livre ao lado da mesa, olhando o processo
+  const P=[[28.0,-3.9,0],[24.2,-5.2,0],[27.2,-6.2,0],[28.8,-3.9,0]];let i=0;
+  while(true){w.status='Acompanhando o processamento';w.pose='idle';await wait(rnd(5,9));i=(i+1)%P.length;await moveAlong(w,[[P[i][0],P[i][1]]],1.3);await turnTo(w,P[i][2]);}
 }
 async function ubFeed(w){                                           // estrela: leva os pacotes das áreas de carga para a ponta da mesa
   await wait(2);const F=UB.FEED;
@@ -2403,7 +2406,7 @@ async function ubFeed(w){                                           // estrela: 
     if(F.p||F.res||!src.length){w.pose='idle';w.status=F.p||F.res?'Aguardando a bipagem':'Aguardando carga';await wait(0.4);continue;}
     const s=src[Math.floor(Math.random()*src.length)];s.res=F.res=true;
     w.status='Pegando o pacote na '+(s.g.userData.kind==='sack'?'saca':'gaylord');
-    await moveAlong(w,[[31.0,0.5],[30.5,s.z]],2.4);await turnTo(w,PI/2);w.pose='low';await wait(rnd(0.3,0.5));
+    await moveAlong(w,[[30.9,0.5],[29.9,s.z]],2.4);await turnTo(w,PI/2);w.pose='low';await wait(rnd(0.3,0.5));
     s.g.userData.n--;setUnit(s.g);const p=makePkg(rint(0,5));setCarry(w,p.material);
     if(s.g.userData.n<=0){const u=s.g;s.g=null;(async()=>{await wait(2);await tween(0.9,k=>{u.scale.y=1-0.95*k;});u.parent&&u.parent.remove(u);})();}
     s.res=false;
@@ -2423,19 +2426,19 @@ async function ubBip1(w){                                           // primeira 
     await flyTo(p,new T.Vector3(M0.x,TBL_Y+0.21,M0.z),0.35,0.06);M0.p=p;M0.res=false;w.pose='idle';await wait(rnd(0.1,0.3));
   }
 }
-async function ubBip2(w){                                           // segunda bipagem: bipa e deixa acumulando na mesa
-  await wait(3);const M0=UB.MID,hx=26.2;
+async function ubBip2(w){                                           // segunda bipagem: bipa e arremessa o pacote para acumular na mesa
+  await wait(3);const M0=UB.MID;
   while(true){
     const col=UB.ACC.find(s=>s.stack.length<4&&!s.res);
     if(!M0.p||!col){w.pose='idle';w.status=M0.p?'Mesa cheia':'Aguardando pacote';await wait(0.3);continue;}
     col.res=true;w.status='Pegando o pacote';await turnTo(w,PI);w.pose='reach';await wait(0.25);
     const p=M0.p;M0.p=null;grpRJP.remove(p);setCarry(w,p.material);
     w.status='Bipagem 2: bipando';await wait(0.15);await bip(w);await wait(0.15);
-    w.status='Acumulando o pacote na mesa';
-    if(Math.abs(col.x-hx)>1.1)await moveAlong(w,[[col.x,2.0]],2.0);
-    await turnTo(w,PI);grpRJP.add(p);p.position.copy(handsWorld(w));setCarry(w,false);w.pose='reach';
-    await flyTo(p,new T.Vector3(col.x,TBL_Y+0.21+col.stack.length*0.34,col.z),0.4,0.06);col.stack.push(p);col.p=p;col.res=false;w.pose='idle';
-    if(Math.abs(col.x-hx)>1.1)await moveAlong(w,[[hx,2.0]],2.2);await turnTo(w,PI);await wait(rnd(0.1,0.3));
+    w.status='Arremessando o pacote na mesa';const px=w.g.position.x,pz=w.g.position.z;await turnTo(w,Math.atan2(col.x-px,col.z-pz));
+    grpRJP.add(p);p.position.copy(handsWorld(w));setCarry(w,false);w.pose='reach';
+    const d=Math.abs(col.x-px);
+    await flyTo(p,new T.Vector3(col.x,TBL_Y+0.21+col.stack.length*0.34,col.z),0.35+0.07*d,0.45+0.06*d);
+    col.stack.push(p);col.p=p;col.res=false;w.pose='idle';await turnTo(w,PI);await wait(rnd(0.1,0.3));
   }
 }
 const UPREF={top:['top','gaiT','dev','cenT'],cen:['cenT','cenB','dev','top'],bot:['bottom','gaiB','cenB','right']};
