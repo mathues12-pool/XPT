@@ -2252,12 +2252,10 @@ function ubStackPile(x,z,n,w,d,h,cols,par){                       // pilha de ch
   for(let k=0;k<n;k++){const b=box(w,h,d,pick(cols),x+rnd(-0.04,0.04),FLOOR+h/2+k*(h+0.005),z+rnd(-0.04,0.04),par);b.rotation.y=rnd(-0.08,0.08);}
 }
 let UBRN=0;
-function ubPlate(x,z,wall){                                         // placa laranja (igual à das gaiolas) na parede, acima da rota
-  const o=textCanvas('R'+String(++UBRN).padStart(2,'0'),{fs:64,fg:'#fff',pad:8,bg:'#f26a2e',r:6,h:92});
+function ubPlate(x,z,wall){                                         // placa laranja lisa (igual à das gaiolas) na parede, acima da rota
   const g=new T.Group();const y=FLOOR+1.12;
   if(wall==='N'){g.position.set(x,y,-WZ+0.2);}else if(wall==='S'){g.position.set(x,y,WZ-0.2);g.rotation.y=PI;}else{g.position.set(WX-0.2,y,z);g.rotation.y=-PI/2;}
-  const m=new T.Mesh(new T.PlaneGeometry(0.95,0.95*o.h/o.w),new T.MeshBasicMaterial({map:o.tex,toneMapped:false}));m.rotation.x=-0.55;g.add(m);
-  const b=box(0.99,0.33,0.03,0xf26a2e,0,0,-0.02,g,{noCast:true});b.rotation.x=-0.55;RJ.add(g);
+  const b=box(0.8,0.3,0.03,0xf26a2e,0,0,0,g,{noCast:true});b.rotation.x=-0.55;RJ.add(g);
 }
 function buildRJ0(){
   const GA=[-9.4,-3.1],GB=[-2.2,4.1];                                  // portão duplo: duas aberturas, como no desenho
@@ -2282,17 +2280,19 @@ function buildRJ0(){
       for(let k=0;k<n;k++){const p=makeRoutePallet();p.position.set(px+rnd(-0.03,0.03),FLOOR+k*0.15,pz+rnd(-0.03,0.03));p.rotation.y=rnd(-0.03,0.03);I.add(p);}}
   })();
   /* ---------- rotas encostadas na parede, como em Penha, todas em pallet ---------- */
-  const rowP=(x1,x2,z,face,grp)=>{const n=Math.floor((x2-x1)/1.9);frame((x1+x2)/2,z,x2-x1,1.5,0x9fb4d6,RJ);
-    for(let i=0;i<n;i++){const x=x1+(i+0.5)*(x2-x1)/n,g=makeRoutePallet();g.position.set(x,FLOOR,z);RJ.add(g);
-      ubPlate(x,z,face==='S'?'N':'S');const pl={x,z,g,n:0,kind:'pal',grp,box:[],sx:x,sz:face==='S'?z+1.25:z-1.3,h:face==='S'?PI:0};for(let k=rint(0,7);k>0;k--)palletAdd(pl);RJP.push(pl);UB.CELLS.push(pl);}};
+  const rowP=(x1,x2,z,face,grp)=>{const n=Math.floor((x2-x1)/3.5);frame((x1+x2)/2,z,x2-x1,1.5,0x9fb4d6,RJ);
+    for(let i=0;i<n;i++){const xc=x1+(i+0.5)*(x2-x1)/n;ubPlate(xc,z,face==='S'?'N':'S');
+      [-0.66,0.66].forEach(d=>{const x=xc+d,g=makeRoutePallet();g.position.set(x,FLOOR,z);RJ.add(g);
+        const pl={x,z,g,n:0,kind:'pal',grp,box:[],sx:x,sz:face==='S'?z+1.25:z-1.3,h:face==='S'?PI:0};for(let k=rint(0,7);k>0;k--)palletAdd(pl);RJP.push(pl);UB.CELLS.push(pl);});}};
   rowP(-11.0,-1.4,-WZ+0.95,'S','top');rowP(5.4,32.8,-WZ+0.95,'S','top');                         // parede norte
   (function(){const a=-0.8,b=5.3,cx=(a+b)/2,cz=-WZ+0.95;frame(cx,cz,b-a,1.5,0x9fb4d6,RJ);floorText('DEVOLUÇÕES',cx,cz+1.0,3.4,'#c98e00',0,RJ);
     ubPlate(cx,0,'N');const g=makeRoutePallet();g.position.set(cx,FLOOR,cz);RJ.add(g);const pl={x:cx,z:cz,g,n:0,kind:'pal',grp:'dev',box:[],sx:cx,sz:cz+1.25,h:PI};for(let k=rint(2,6);k>0;k--)palletAdd(pl);RJP.push(pl);UB.CELLS.push(pl);
     [-1,1].forEach(q=>{const u=makeGaylord(rint(6,10));RJ.add(u);u.position.set(cx+q*1.9,FLOOR,cz);});})();
   rowP(-9.6,31.9,WZ-0.95,'N','bottom');                                                           // parede sul
-  (function(){const n=9,z0=-8.6,z1=8.2;frame(WX-0.95,(z0+z1)/2,1.5,z1-z0,0x9fb4d6,RJ);                                // parede leste
-    for(let i=0;i<n;i++){const z=z0+(i+0.5)*(z1-z0)/n,g=makeRoutePallet();g.position.set(WX-0.95,FLOOR,z);RJ.add(g);
-      ubPlate(0,z,'E');const pl={x:WX-0.95,z,g,n:0,kind:'pal',grp:'right',box:[],sx:WX-2.3,sz:z,h:PI/2};for(let k=rint(0,7);k>0;k--)palletAdd(pl);RJP.push(pl);UB.CELLS.push(pl);}})();
+  (function(){const n=4,z0=-8.6,z1=8.2;frame(WX-0.95,(z0+z1)/2,1.5,z1-z0,0x9fb4d6,RJ);                                // parede leste
+    for(let i=0;i<n;i++){const zc=z0+(i+0.5)*(z1-z0)/n;ubPlate(0,zc,'E');
+      [-0.66,0.66].forEach(d=>{const z=zc+d,g=makeRoutePallet();g.position.set(WX-0.95,FLOOR,z);RJ.add(g);
+        const pl={x:WX-0.95,z,g,n:0,kind:'pal',grp:'right',box:[],sx:WX-2.3,sz:z,h:PI/2};for(let k=rint(0,7);k>0;k--)palletAdd(pl);RJP.push(pl);UB.CELLS.push(pl);});}})();
   frame(-1.9,0,19.6,3.2,0x9fb4d6,RJ);                                                              // bloco entre o caminhão e a mesa: duas filas costa com costa
   [[-0.78,'N','cenT'],[0.78,'S','cenB']].forEach(([z,face,grp])=>{const x1=-11.7,x2=7.9,n=Math.floor((x2-x1)/1.9);
     for(let i=0;i<n;i++){const x=x1+(i+0.5)*(x2-x1)/n,g=makeRoutePallet();g.position.set(x,FLOOR,z);RJ.add(g);
@@ -2315,14 +2315,17 @@ function buildRJ0(){
   /* ---------- sacas abertas ao redor da mesa: quem separa enche a saca e leva cheia até a rota ---------- */
   UB.SACKS=[];
   const mkOpenSack=()=>{const g=new T.Group(),mat=M(0xe9e5da,{roughness:0.95,side:T.DoubleSide});
-    const body=new T.Mesh(new T.CylinderGeometry(0.34,0.29,0.62,14,1,true),mat);body.position.y=0.31;body.castShadow=true;g.add(body);
-    const bot=new T.Mesh(new T.CircleGeometry(0.29,14),mat);bot.rotation.x=-PI/2;bot.position.y=0.01;g.add(bot);
-    const rim=new T.Mesh(new T.TorusGeometry(0.34,0.025,6,16),M(0xd2ccbc,{roughness:0.9}));rim.rotation.x=PI/2;rim.position.y=0.62;g.add(rim);
-    const fill=new T.Mesh(new T.CylinderGeometry(0.28,0.28,1,12),M(0xc9a56a,{roughness:0.9}));fill.scale.y=0.001;fill.position.y=0.02;g.add(fill);
+    const prof=[[0,0],[0.2,0],[0.28,0.035],[0.325,0.14],[0.34,0.34],[0.335,0.54],[0.31,0.7],[0.285,0.8],[0.3,0.86],[0.33,0.84]].map(([r,y])=>new T.Vector2(r,y));
+    const lg=new T.LatheGeometry(prof,22),lp=lg.attributes.position,lv=new T.Vector3(),sd=rnd(0,6);
+    for(let i=0;i<lp.count;i++){lv.fromBufferAttribute(lp,i);const a=Math.atan2(lv.z,lv.x),y=lv.y,k=1+0.05*Math.sin(a*3+sd+y*6)+0.035*Math.sin(a*7-y*11+sd)+0.02*Math.sin(a*13+y*17+sd*3);lp.setXYZ(i,lv.x*k*1.04,y,lv.z*k*0.96);}
+    lg.computeVertexNormals();
+    const smat=SACK_MAT.clone();smat.side=T.DoubleSide;
+    const body=new T.Mesh(lg,smat);body.scale.setScalar(0.8);body.castShadow=true;g.add(body);
+        const fill=new T.Mesh(new T.CylinderGeometry(0.23,0.23,1,12),M(0xc9a56a,{roughness:0.9}));fill.scale.y=0.001;fill.position.y=0.02;g.add(fill);
     const top=new T.Group();g.add(top);for(let i=0;i<4;i++){const b=new T.Mesh(new T.BoxGeometry(0.26,0.2,0.26),M(pick(PKGCOLS)));b.position.set(rnd(-0.15,0.15),0.12,rnd(-0.15,0.15));b.rotation.y=rnd(0,1.5);b.castShadow=true;top.add(b);}top.visible=false;
     g.userData={fill,top};return g;};
   UB.mkOpenSack=mkOpenSack;
-  [[14.0,2.95,'B'],[16.0,2.95,'B'],[18.0,2.95,'B'],[20.0,2.95,'B'],[22.0,2.95,'B'],[12.0,-0.9,'L'],[12.0,0.9,'L'],[17.0,-2.5,'T'],[20.5,-2.5,'T'],[24.0,-2.5,'T']].forEach(([x,z,side])=>{
+  [[14.0,2.95,'B'],[16.0,2.95,'B'],[18.0,2.95,'B'],[20.0,2.95,'B'],[22.0,2.95,'B'],[15.0,-2.5,'T'],[17.5,-2.5,'T'],[20.0,-2.5,'T'],[22.5,-2.5,'T'],[25.0,-2.5,'T']].forEach(([x,z,side])=>{
     const g=mkOpenSack();g.position.set(x,FLOOR,z);g.rotation.y=rnd(0,PI);grpRJP.add(g);
     UB.SACKS.push({x,z,side,g,n:0,res:false,sx:side==='B'?x:side==='T'?x:10.9,sz:side==='B'?2.0:side==='T'?-3.2:z,face:side==='B'?0:side==='T'?0:PI/2});});
   /* ---------- WC, copa e escritório (encostados nas paredes; portas nas aberturas do desenho) ---------- */
@@ -2341,8 +2344,6 @@ function buildRJ0(){
     box(xb-xa-0.3,0.012,z2r-z1r-0.3,0xf1eadf,(xa+xb)/2,FLOOR+0.012,(z1r+z2r)/2,RJ,{noCast:true});
     const cx=(xa+xb)/2,cz=(z1r+z2r)/2;
     box(0.8,1.9,0.7,0xe9edf3,xa+0.6,FLOOR+0.95,z2r-0.6,RJ);box(2.0,0.9,0.6,0xdfe6f1,xa+2.0,FLOOR+0.45,z2r-0.45,RJ);box(0.62,0.36,0.42,0xe9edf3,xa+1.7,FLOOR+1.08,z2r-0.45,RJ);
-    box(1.8,0.07,1.0,0xe8edf4,cx+0.4,FLOOR+0.92,cz,RJ);[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>box(0.06,0.9,0.06,0x7f8da8,cx+0.4+a*0.8,FLOOR+0.45,cz+b*0.4,RJ));
-    [[-0.6,-0.7],[0.6,-0.7],[-0.6,0.7],[0.6,0.7]].forEach(([dx,dz])=>box(0.45,0.06,0.45,0x334155,cx+0.4+dx,FLOOR+0.5,cz+dz,RJ));
     floorText('COPA',cx,z1r+0.8,1.4,'#a58a6a',0,RJ);})();
   [UX(300),UX(385)].forEach(x=>{const z=UZ(390),n0=RJ.children.length;box(1.8,0.07,0.9,0xf3f6fb,x,FLOOR+0.78,z,RJ);[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>box(0.06,0.76,0.06,0x7f8da8,x+a*0.82,FLOOR+0.38,z+b*0.38,RJ));
     box(0.6,0.38,0.04,0x111827,x,FLOOR+1.1,z-0.2,RJ);box(0.1,0.18,0.1,0x2c3340,x,FLOOR+0.9,z-0.2,RJ);box(0.5,0.08,0.5,0x1f2937,x,FLOOR+0.5,z+0.8,RJ);box(0.5,0.55,0.08,0x1f2937,x,FLOOR+0.8,z+1.05,RJ);});
