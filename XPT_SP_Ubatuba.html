@@ -1660,8 +1660,8 @@ async function supXLoop(){
   const wallM=surf(TX.plaster,{color:0xe7eaef,rx:10,ry:1.4,rough:0.92,bump:0.3});
   const W=(x1,z1,x2,z2,y0,y1)=>{const w=Math.abs(x2-x1)||0.5,d=Math.abs(z2-z1)||0.5;box(w,y1-y0,d,wallM,(x1+x2)/2,(y0+y1)/2,(z1+z2)/2,R);};
   W(-WX-0.3,-WZ-0.3,WX+0.3,-WZ-0.3,0,H);W(-WX-0.3,WZ+0.3,WX+0.3,WZ+0.3,0,H);W(WX+0.3,-WZ-0.3,WX+0.3,WZ+0.3,0,H);
-  W(-WX-0.3,-WZ-0.3,-WX-0.3,-1.4,0,H);W(-WX-0.3,3.0,-WX-0.3,WZ+0.3,0,H);
-  W(-WX-0.3,-1.4,-WX-0.3,3.0,FLOOR+4.6,H);
+  W(-WX-0.3,-WZ-0.3,-WX-0.3,-6.2,0,H);W(-WX-0.3,-3.0,-WX-0.3,-2.2,0,H);W(-WX-0.3,4.1,-WX-0.3,WZ+0.3,0,H);
+  W(-WX-0.3,-6.2,-WX-0.3,-3.0,FLOOR+4.6,H);W(-WX-0.3,-2.2,-WX-0.3,4.1,FLOOR+4.6,H);
   // paredes internas sobem até o forro quando o teto está ligado (modo caminhada fica fechado)
   [].forEach(s=>{const ext=Math.abs(Math.abs(s.cx)-WX)<0.5||Math.abs(Math.abs(s.cz)-WZ)<0.5;if(ext)return;box(s.w,H-FLOOR,s.d,wallM,s.cx,FLOOR+(H-FLOOR)/2,s.cz,R);});
   box(WX*2+0.7,0.5,0.06,BLACK,0,H-0.6,WZ+0.6,R);
@@ -2252,19 +2252,18 @@ function ubStackPile(x,z,n,w,d,h,cols,par){                       // pilha de ch
   for(let k=0;k<n;k++){const b=box(w,h,d,pick(cols),x+rnd(-0.04,0.04),FLOOR+h/2+k*(h+0.005),z+rnd(-0.04,0.04),par);b.rotation.y=rnd(-0.08,0.08);}
 }
 function buildRJ0(){
-  const GZ=[-1.4,3.0];
-  /* ---------- paredes externas e portão do caminhão ---------- */
-  rjWall(-WX,-WZ,WX,-WZ);rjWall(-WX,WZ,WX,WZ);rjWall(WX,-WZ,WX,WZ);rjWall(-WX,-WZ,-WX,GZ[0]);rjWall(-WX,GZ[1],-WX,WZ);
-  (function(){const zc=(GZ[0]+GZ[1])/2,W=GZ[1]-GZ[0],g=new T.Group();g.position.set(-WX,0,zc);RJ.add(g);
+  const GA=[-6.2,-3.0],GB=[-2.2,4.1];                                  // portão duplo: duas aberturas, como no desenho
+  rjWall(-WX,-WZ,WX,-WZ);rjWall(-WX,WZ,WX,WZ);rjWall(WX,-WZ,WX,WZ);rjWall(-WX,-WZ,-WX,GA[0]);rjWall(-WX,GA[1],-WX,GB[0]);rjWall(-WX,GB[1],-WX,WZ);
+  [GA,GB].forEach(G0=>{const zc=(G0[0]+G0[1])/2,W=G0[1]-G0[0],g=new T.Group();g.position.set(-WX,0,zc);RJ.add(g);
     [-1,1].forEach(k=>box(0.6,4.4,0.6,BLACK,0,FLOOR+2.2,k*W/2,g));box(0.6,0.6,W+0.6,BLACK,0,FLOOR+4.3,0,g);
     const o=textCanvas('Entrada',{fs:64,fg:'#fff',pad:24,bg:'#ee4d2d',r:18,h:96});
     [-1,1].forEach(k=>{const m=new T.Mesh(new T.PlaneGeometry(2.8,2.8*o.h/o.w),new T.MeshBasicMaterial({map:o.tex,toneMapped:false}));m.position.set(k*0.32,FLOOR+4.3,0);m.rotation.y=k>0?PI/2:-PI/2;g.add(m);});
     const door=new T.Group();door.position.set(0,FLOOR+4.0,0);g.add(door);for(let i=0;i<9;i++)box(0.16,0.44,W-0.3,i%2?0xd9e1ef:0xe7edf8,0,-0.22-i*0.44,0,door,{noCast:true});
-    door.scale.y=0.08;})();
+    door.scale.y=0.08;});
   /* ---------- caminhão parado de ré ---------- */
-  const tr=makeTruck();grpRJP.add(tr.g);tr.g.position.set(-23.5,0,0.8);tr.g.rotation.y=-PI/2;RJTR=tr;
+  const tr=makeTruck();grpRJP.add(tr.g);tr.g.position.set(-23.5,0,0.95);tr.g.rotation.y=-PI/2;RJTR=tr;
   /* ---------- insumos: gaylords desmontadas, pallets enviados e sacas ---------- */
-  (function(){const a=UX(100),b=UX(420),c=UZ(32),d=UZ(130),I=new T.Group();RJ.add(I);
+  (function(){const a=UX(100),b=UX(420),c=UZ(32)-1.0,d=UZ(130)-1.0,I=new T.Group();RJ.add(I);
     frame((a+b)/2,(c+d)/2,b-a,d-c,0x9fb4d6,RJ);floorText('INSUMOS',(a+b)/2,d-0.5,3.6,'#7d8ca8',0,RJ);
     const card=[0xc4935c,0xb98a55,0xcc9d66],wood=[0xc99f68,0xb98a55,0xd0a770],sackc=[0xf1eee6,0xe9e5da,0xf6f4ee];
     for(let i=0;i<5;i++)ubStackPile(a+1.4+i*1.9,c+1.2,rint(14,26),1.3,1.18,0.045,card,I);                    // gaylords desmontadas (chapas)
@@ -2273,16 +2272,22 @@ function buildRJ0(){
     for(let i=0;i<4;i++)ubStackPile(a+11.6+i*1.9,c+3.1,rint(10,18),1.0,0.7,0.07,sackc,I);                    // sacas dobradas
     for(let i=0;i<3;i++){const s=makeSack();s.position.set(a+15.8+i*0.7,FLOOR,c+3.2);s.rotation.y=rnd(0,PI);I.add(s);}
   })();
-  /* ---------- rotas ---------- */
-  ubCells(460,630,38,80,3,false,'S','pal','top');
-  (function(){const a=UX(640),b=UX(748),c=UZ(38),d=UZ(80),cx=(a+b)/2,cz=(c+d)/2;frame(cx,cz,b-a-0.2,d-c-0.2,0x9fb4d6,RJ);floorText('DEVOLUÇÕES',cx,cz,3.4,'#c98e00',0,RJ);
-    const g=makeRoutePallet();g.position.set(cx,FLOOR,cz);RJ.add(g);const pl={x:cx,z:cz,g,n:0,kind:'pal',grp:'dev',box:[],sx:cx,sz:d+0.35,h:PI};for(let k=rint(2,6);k>0;k--)palletAdd(pl);RJP.push(pl);UB.CELLS.push(pl);
-    [-1,1].forEach(s=>{const q=makeGaylord(rint(6,10));RJ.add(q);q.position.set(cx+s*1.9,FLOOR,cz);});})();
-  ubCells(750,1235,38,80,8,false,'S',['gl','pal'],'top',[2,5]);
-  ubCells(1252,1288,40,410,9,true,'W','pal','right');
-  ubCells(485,1220,378,420,10,false,'N',['gl','pal'],'bottom',[3,7]);
-  ubCells(448,795,180,232,6,false,'N',['pal','gl'],'cenT');
-  ubCells(448,795,232,282,6,false,'S','gl','cenB');
+  /* ---------- rotas encostadas na parede, como em Penha, todas em pallet ---------- */
+  const rowP=(x1,x2,z,face,grp)=>{const n=Math.floor((x2-x1)/1.9);frame((x1+x2)/2,z,x2-x1,1.5,0x9fb4d6,RJ);
+    for(let i=0;i<n;i++){const x=x1+(i+0.5)*(x2-x1)/n,g=makeRoutePallet();g.position.set(x,FLOOR,z);RJ.add(g);
+      const pl={x,z,g,n:0,kind:'pal',grp,box:[],sx:x,sz:face==='S'?z+1.25:z-1.3,h:face==='S'?PI:0};for(let k=rint(0,7);k>0;k--)palletAdd(pl);RJP.push(pl);UB.CELLS.push(pl);}};
+  rowP(-11.0,-1.4,-WZ+0.95,'S','top');rowP(5.4,32.8,-WZ+0.95,'S','top');                         // parede norte
+  (function(){const a=-0.8,b=5.3,cx=(a+b)/2,cz=-WZ+0.95;frame(cx,cz,b-a,1.5,0x9fb4d6,RJ);floorText('DEVOLUÇÕES',cx,cz+1.0,3.4,'#c98e00',0,RJ);
+    const g=makeRoutePallet();g.position.set(cx,FLOOR,cz);RJ.add(g);const pl={x:cx,z:cz,g,n:0,kind:'pal',grp:'dev',box:[],sx:cx,sz:cz+1.25,h:PI};for(let k=rint(2,6);k>0;k--)palletAdd(pl);RJP.push(pl);UB.CELLS.push(pl);
+    [-1,1].forEach(q=>{const u=makeGaylord(rint(6,10));RJ.add(u);u.position.set(cx+q*1.9,FLOOR,cz);});})();
+  rowP(-9.6,31.9,WZ-0.95,'N','bottom');                                                           // parede sul
+  (function(){const n=9,z0=-8.6,z1=8.2;frame(WX-0.95,(z0+z1)/2,1.5,z1-z0,0x9fb4d6,RJ);                                // parede leste
+    for(let i=0;i<n;i++){const z=z0+(i+0.5)*(z1-z0)/n,g=makeRoutePallet();g.position.set(WX-0.95,FLOOR,z);RJ.add(g);
+      const pl={x:WX-0.95,z,g,n:0,kind:'pal',grp:'right',box:[],sx:WX-2.3,sz:z,h:PI/2};for(let k=rint(0,7);k>0;k--)palletAdd(pl);RJP.push(pl);UB.CELLS.push(pl);}})();
+  frame(-1.9,0,19.6,3.2,0x9fb4d6,RJ);                                                              // bloco entre o caminhão e a mesa: duas filas costa com costa
+  [[-0.78,'N','cenT'],[0.78,'S','cenB']].forEach(([z,face,grp])=>{const x1=-11.7,x2=7.9,n=Math.floor((x2-x1)/1.9);
+    for(let i=0;i<n;i++){const x=x1+(i+0.5)*(x2-x1)/n,g=makeRoutePallet();g.position.set(x,FLOOR,z);RJ.add(g);
+      const pl={x,z,g,n:0,kind:'pal',grp,box:[],sx:x,sz:face==='S'?z+1.35:z-1.35,h:face==='S'?PI:0};for(let k=rint(0,7);k>0;k--)palletAdd(pl);RJP.push(pl);UB.CELLS.push(pl);}});
   /* ---------- gaiolas (4) perto da mesa ---------- */
   [[930,990,95,130,'T'],[995,1050,95,130,'T'],[930,985,303,340,'B'],[995,1050,303,340,'B']].forEach(([x1,x2,y1,y2,s])=>{
     const a=UX(x1),b=UX(x2),c=UZ(y1),d=UZ(y2),cx=(a+b)/2,cz=(c+d)/2;frame(cx,cz,b-a-0.2,d-c-0.2,0x9fb4d6,RJ);
@@ -2298,35 +2303,39 @@ function buildRJ0(){
   UB.FEED={x:29.6,z:0.8,p:null,res:false};UB.MID={x:27.9,z:0.8,p:null,res:false};
   for(let i=0;i<12;i++){const s={x:25.6-i*0.9,z:0.8,stack:[],p:null,res:false,col:i};const n=rint(2,4);
     for(let k=0;k<n;k++){const q=makePkg(rint(0,5));q.rotation.y=rnd(-0.4,0.4);grpRJP.add(q);q.position.set(s.x+rnd(-0.05,0.05),TBL_Y+0.21+k*0.34,s.z+rnd(-0.05,0.05));s.stack.push(q);}s.p=s.stack[s.stack.length-1];UB.ACC.push(s);}
-  /* ---------- WC, copa e escritório (canto inferior esquerdo) ---------- */
-  const room=(px1,px2,door)=>{const x1=UX(px1),x2=UX(px2),z1=UZ(320),z2=UZ(435),dw=0.95,mid=(x1+x2)/2;
-    rjWall(x1,z2,x2,z2);rjWall(x1,z1,x1,z2);rjWall(x2,z1,x2,z2);rjWall(x1,z1,mid-dw/2,z1);rjWall(mid+dw/2,z1,x2,z1);
-    const lf=new T.Group();lf.position.set(mid-dw/2,FLOOR,z1);lf.rotation.y=-0.95;RJ.add(lf);box(dw-0.06,1.3,0.05,0x8fa3c2,(dw-0.06)/2,0.65,0,lf);
-    box(x2-x1-0.3,0.012,z2-z1-0.3,door,(x1+x2)/2,FLOOR+0.012,(z1+z2)/2,RJ,{noCast:true});return {x1,x2,z1,z2,cx:mid,cz:(z1+z2)/2};};
-  [room(28,92,0xe6f0f8),room(100,165,0xe6f0f8)].forEach(r=>{const W=M(0xfbfbfc,{roughness:0.25}),S=M(0x9aa6b8,{metalness:0.8,roughness:0.25});
-    const x=r.x1+0.8,z=r.z2-0.8,n0=RJ.children.length;cyl(0.17,0.2,0.4,W,18,x,FLOOR+0.2,z,RJ);cyl(0.27,0.22,0.16,W,20,x,FLOOR+0.48,z-0.05,RJ);box(0.5,0.42,0.2,W,x,FLOOR+0.82,r.z2-0.25,RJ);
-    const sx=r.x2-0.7,sz=r.z2-0.35;cyl(0.09,0.12,0.8,W,14,sx,FLOOR+0.4,sz,RJ);box(0.6,0.14,0.42,W,sx,FLOOR+0.86,sz,RJ);cyl(0.02,0.02,0.18,S,8,sx,FLOOR+1.02,sz+0.12,RJ);box(0.5,0.6,0.02,M(0xcfe3f5,{roughness:0.05,metalness:0.6}),sx,FLOOR+1.3,r.z2-0.1,RJ);
-    swapRange(RJ,n0,RJ.children.length,['sanitary_toilet_wallMounted_a01','sanitary_sink_wallMounted_a01'],()=>{PB('sanitary_toilet_wallMounted_a01',x,FLOOR,r.z2-0.55,0,RJ);PB('sanitary_sink_wallMounted_a01',sx,FLOOR+0.45,r.z2-0.32,0,RJ);});
-    box(0.4,0.22,0.03,0x2f6fd1,r.cx+0.85,FLOOR+1.15,r.z1-0.07,RJ);});
-  (function(){const r=room(170,262,0xf1eadf),f0=RJ.children.length;
-    box(0.8,1.9,0.7,0xe9edf3,r.x2-0.6,FLOOR+0.95,r.z2-0.6,RJ);box(2.0,0.9,0.6,0xdfe6f1,r.x1+1.3,FLOOR+0.45,r.z2-0.45,RJ);box(0.62,0.36,0.42,0xe9edf3,r.x1+1.0,FLOOR+1.08,r.z2-0.45,RJ);
-    box(1.8,0.07,1.0,0xe8edf4,r.cx,FLOOR+0.92,r.cz+0.2,RJ);[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>box(0.06,0.9,0.06,0x7f8da8,r.cx+a*0.8,FLOOR+0.45,r.cz+0.2+b*0.4,RJ));
-    [[-0.6,-0.7],[0.6,-0.7],[-0.6,0.9],[0.6,0.9]].forEach(([dx,dz])=>box(0.45,0.06,0.45,0x334155,r.cx+dx,FLOOR+0.5,r.cz+0.2+dz,RJ));
-    floorText('COPA',r.cx,r.z1+0.8,1.4,'#a58a6a',0,RJ);})();
+  /* ---------- WC, copa e escritório (encostados nas paredes; portas nas aberturas do desenho) ---------- */
+  const z1r=UZ(320),z2r=WZ-0.15,dw=1.1;
+  const leaf=(x,z,ry,len)=>{const lf=new T.Group();lf.position.set(x,FLOOR,z);lf.rotation.y=ry;RJ.add(lf);box(len,1.3,0.05,0x8fa3c2,len/2,0.65,0,lf);};
+  const wcRoom=(xa,xb,xd,xTbl)=>{const W=M(0xfbfbfc,{roughness:0.25}),S=M(0x9aa6b8,{metalness:0.8,roughness:0.25});
+    rjWall(xb,z1r,xb,z2r);rjWall(xa,z1r,xd-dw/2,z1r);rjWall(xd+dw/2,z1r,xb,z1r);leaf(xd-dw/2,z1r,-0.95,dw-0.06);
+    box(xb-xa-0.3,0.012,z2r-z1r-0.3,0xe6f0f8,(xa+xb)/2,FLOOR+0.012,(z1r+z2r)/2,RJ,{noCast:true});
+    const x=xa+0.9,z=z2r-0.8,n0=RJ.children.length;cyl(0.17,0.2,0.4,W,18,x,FLOOR+0.2,z,RJ);cyl(0.27,0.22,0.16,W,20,x,FLOOR+0.48,z-0.05,RJ);box(0.5,0.42,0.2,W,x,FLOOR+0.82,z2r-0.25,RJ);
+    const sx=xb-0.8,sz=z2r-0.35;cyl(0.09,0.12,0.8,W,14,sx,FLOOR+0.4,sz,RJ);box(0.6,0.14,0.42,W,sx,FLOOR+0.86,sz,RJ);cyl(0.02,0.02,0.18,S,8,sx,FLOOR+1.02,sz+0.12,RJ);box(0.5,0.6,0.02,M(0xcfe3f5,{roughness:0.05,metalness:0.6}),sx,FLOOR+1.3,z2r-0.1,RJ);
+    swapRange(RJ,n0,RJ.children.length,['sanitary_toilet_wallMounted_a01','sanitary_sink_wallMounted_a01'],()=>{PB('sanitary_toilet_wallMounted_a01',x,FLOOR,z2r-0.55,0,RJ);PB('sanitary_sink_wallMounted_a01',sx,FLOOR+0.45,z2r-0.32,0,RJ);});
+    box(0.4,0.22,0.03,0x2f6fd1,xd+0.85,FLOOR+1.15,z1r-0.07,RJ);};
+  wcRoom(-WX,-31.6,-33.2);wcRoom(-31.6,-27.5,-29.4);
+  (function(){const xa=-27.5,xb=UX(262),zd0=UZ(405),zd1=UZ(435);
+    rjWall(xa,z1r,xb,z1r);rjWall(xb,z1r,xb,zd0);rjWall(xb,zd1,xb,z2r);leaf(xb,zd0,-0.95+PI/2,zd1-zd0-0.06);                        // porta na lateral, perto do chão do desenho
+    box(xb-xa-0.3,0.012,z2r-z1r-0.3,0xf1eadf,(xa+xb)/2,FLOOR+0.012,(z1r+z2r)/2,RJ,{noCast:true});
+    const cx=(xa+xb)/2,cz=(z1r+z2r)/2;
+    box(0.8,1.9,0.7,0xe9edf3,xa+0.6,FLOOR+0.95,z2r-0.6,RJ);box(2.0,0.9,0.6,0xdfe6f1,xa+2.0,FLOOR+0.45,z2r-0.45,RJ);box(0.62,0.36,0.42,0xe9edf3,xa+1.7,FLOOR+1.08,z2r-0.45,RJ);
+    box(1.8,0.07,1.0,0xe8edf4,cx+0.4,FLOOR+0.92,cz,RJ);[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>box(0.06,0.9,0.06,0x7f8da8,cx+0.4+a*0.8,FLOOR+0.45,cz+b*0.4,RJ));
+    [[-0.6,-0.7],[0.6,-0.7],[-0.6,0.7],[0.6,0.7]].forEach(([dx,dz])=>box(0.45,0.06,0.45,0x334155,cx+0.4+dx,FLOOR+0.5,cz+dz,RJ));
+    floorText('COPA',cx,z1r+0.8,1.4,'#a58a6a',0,RJ);})();
   [UX(300),UX(385)].forEach(x=>{const z=UZ(390),n0=RJ.children.length;box(1.8,0.07,0.9,0xf3f6fb,x,FLOOR+0.78,z,RJ);[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>box(0.06,0.76,0.06,0x7f8da8,x+a*0.82,FLOOR+0.38,z+b*0.38,RJ));
     box(0.6,0.38,0.04,0x111827,x,FLOOR+1.1,z-0.2,RJ);box(0.1,0.18,0.1,0x2c3340,x,FLOOR+0.9,z-0.2,RJ);box(0.5,0.08,0.5,0x1f2937,x,FLOOR+0.5,z+0.8,RJ);box(0.5,0.55,0.08,0x1f2937,x,FLOOR+0.8,z+1.05,RJ);});
   floorText('ESCRITÓRIO',UX(380),UZ(425),2.4,'#a58a6a',0,RJ);
   /* ---------- pessoas ---------- */
   const mk=(role,i,x,z,ry,f,o)=>{const w=makeWorker('F',role,Object.assign({skin:SKIN[i%4],female:!!f},o||{}));regActor(w,'F','rjp');w.g.position.set(x,FLOOR,z);w.g.rotation.y=ry;w.home=[x,z];w.status=role;return w;};
   const ger=mk('Gerente do galpão',0,23.9,-4.5,PI,1,{keepVest:true,vest:0xf4f4f4,noStripe:true});ubManager(ger);
-  const star=mk('Abastecimento da mesa',1,31.0,0.5,-PI/2,0);ubFeed(star);
-  const b1=mk('Bipagem 1',2,28.8,2.0,PI,1),b2=mk('Bipagem 2',3,26.8,2.0,PI,0);
+  const star=mk('Abastecimento da mesa',1,31.0,0.5,-PI/2,0);   // homemubFeed(star);
+  const b1=mk('Bipagem 1',2,28.8,2.0,PI,1),b2=mk('Bipagem 2',3,26.8,2.0,PI,1);
   giveScanner(b1,28.8,1.05,0);giveScanner(b2,26.8,1.05,0);ubBip1(b1);ubBip2(b2);
-  [[14.0,-4.4,'top',0],[10.7,-2.5,'cen',1],[11.0,0.0,'cen',0],[13.3,3.0,'bot',1]].forEach(([x,z,grp,f],i)=>{const w=mk('Separação',i,x,z,PI/2,f);ubSep(w,i,grp);});
-  /* descarga: manual dentro da carreta, elétrica leva até as áreas de carga descarregada */
-  {const J=makeHandJack('PM-02',{name:'Igor',vest:0xff8a3d,skin:SKIN[0]});const tz=RJTR.g.position.z;
+  [[14.0,-4.4,'top',1],[10.7,-2.5,'cen',1],[11.0,0.0,'cen',1],[13.3,3.0,'bot',1]].forEach(([x,z,grp,f],i)=>{const w=mk('Separação',i,x,z,PI/2,f);ubSep(w,i,grp);});
+  /* descarga: elétrica dentro da carreta puxa a carga; manual leva até as áreas de carga descarregada */
+  {const J=makeJack('PM-02',0xf5b82e,{name:'Igor',vest:0xff8a3d,skin:SKIN[0]},1.15);const tz=RJTR.g.position.z;
     J.g.position.set(RJEDGE()+0.3,0.6,tz-0.65);J.g.rotation.y=-PI/2;regActor(J,'Igor','rjp');J.status='Dentro da carreta';rjTruckLoop(J);}
-  {const J=makeJack('PM-01',0xf5b82e,{name:'Wagner',vest:0xff8a3d,skin:SKIN[2]},1.15);J.g.position.set(-13.0,FLOOR,-3.3);J.g.rotation.y=PI/2;regActor(J,'Wagner','rjp');J.status='Aguardando';ubCarry(J);}
+  {const J=makeHandJack('PM-01',{name:'Wagner',vest:0xff8a3d,skin:SKIN[2]});J.g.position.set(-13.0,FLOOR,-3.3);J.g.rotation.y=PI/2;regActor(J,'Wagner','rjp');J.status='Aguardando';ubCarry(J);}
 }
 /* ---------- loops de Ubatuba ---------- */
 const UTOP=-3.3,UBOT=3.2;
@@ -2336,7 +2345,7 @@ async function ubCarry(J){                                          // paleteira
     if(!e||e.taken||!free.length){J.status=e&&!e.taken?'Áreas de carga cheias':'Aguardando carga na borda';await wait(0.6);continue;}
     e.taken=true;const dst=free.sort((a,b)=>(a.row==='T'?0:1)-(b.row==='T'?0:1)||Math.random()-0.5)[Math.random()<0.5?0:free.length-1];dst.res=true;
     J.status='Retirando da borda da carreta';
-    await moveAlong(J,[[-14.6,e.z]],2.2);await turnTo(J,-PI/2);
+    await moveAlong(J,[[-14.6,e.z]],2.0);await turnTo(J,-PI/2);
     const g=e.g,wp=g.getWorldPosition(new T.Vector3()),to=J.g.localToWorld(new T.Vector3(0,0,0.95));
     await tween(1.1,k=>{g.position.lerpVectors(wp,new T.Vector3(to.x,FLOOR+0.1,to.z),k);});
     await liftTo(J,0);jackLoad(J,g);T0.edge=null;await liftTo(J,0.1);
@@ -2412,12 +2421,13 @@ async function ubSep(w,i,grp){                                      // separaç�
     const pl=cand[Math.floor(Math.random()*cand.length)];
     w.status='Levando para a rota';
     const sz=pl.sz,sx=pl.sx;let path;
-    if(pl.grp==='top'||pl.grp==='dev'||pl.grp==='gaiT'){const inG=sx>15&&sx<23&&pl.grp==='top';path=pl.grp==='gaiT'?[[11.8,2.0],[11.8,-3.5],[sx,-3.5],[sx,sz]]:inG?[[11.8,2.0],[11.8,-6.85],[sx,-6.85],[sx,sz]]:[[11.8,2.0],[11.8,-3.5],[sx,-3.5],[sx,sz]];}
+    if(pl.grp==='top'||pl.grp==='dev')path=[[11.8,2.0],[11.8,-7.4],[sx,-7.4],[sx,sz]];
+    else if(pl.grp==='gaiT')path=[[11.8,2.0],[11.8,-3.5],[sx,-3.5],[sx,sz]];
     else if(pl.grp==='cenT')path=[[11.8,2.0],[11.8,-3.2],[sx,-3.2],[sx,sz]];
     else if(pl.grp==='cenB')path=[[11.8,2.0],[11.8,3.2],[sx,3.2],[sx,sz]];
-    else if(pl.grp==='right')path=[[11.8,2.0],[11.8,6.1],[33.4,6.1],[sx,sz]];
+    else if(pl.grp==='right')path=[[11.8,2.0],[11.8,7.4],[34.9,7.4],[sx,sz]];
     else if(pl.grp==='gaiB')path=[[col.x,2.0],[sx,sz]];
-    else path=[[11.8,2.0],[11.8,6.0],[sx,6.0],[sx,sz]];                // linha de baixo
+    else path=[[11.8,2.0],[11.8,7.4],[sx,7.4],[sx,sz]];                // parede sul
     await moveAlong(w,path,2.5);await turnTo(w,pl.h);w.pose='reach';await wait(0.35);
     setCarry(w,false);palletAdd(pl);w.pose='idle';
     if(pl.n>=slotMax(pl)){(async()=>{await wait(rnd(3,6));palletClear(pl);})();}
