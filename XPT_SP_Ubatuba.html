@@ -2270,7 +2270,7 @@ function buildRJ0(){
     const door=new T.Group();door.position.set(0,FLOOR+4.0,0);g.add(door);for(let i=0;i<9;i++)box(0.16,0.44,W-0.3,i%2?0xd9e1ef:0xe7edf8,0,-0.22-i*0.44,0,door,{noCast:true});
     door.scale.y=0.08;});
   /* ---------- caminhão parado de ré ---------- */
-  const tr=makeTruck();grpRJP.add(tr.g);tr.g.position.set(-39.3,0,0.95);tr.g.rotation.y=-PI/2;RJTR=tr;
+  const tr=makeTruck();grpRJP.add(tr.g);tr.g.position.set(-23.5,0,0.95);tr.g.rotation.y=-PI/2;RJTR=tr;
   /* ---------- insumos: gaylords desmontadas, pallets enviados e sacas ---------- */
   (function(){const a=UX(100),b=UX(420),c=UZ(32)-1.0,d=UZ(130)-1.0,I=new T.Group();RJ.add(I);
     ubFrame((a+b)/2,(c+d)/2,b-a,d-c,0x9fb4d6,RJ);ubLabel('INSUMOS',(a+b)/2,d-0.5,3.6,'#7d8ca8',0,RJ);
